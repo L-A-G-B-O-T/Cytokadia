@@ -24,10 +24,16 @@ ctx.fillRegularPolygon(canvas.width / 2, canvas.height / 2, 100, 0, 3);
 
 class Node {
 	constructor(){
-		this.pos = new Vector(0, 0);
-		this.vel = new Vector(0, 0); //ignore maybe due to small enviroment?
-		this.force = new Vector(0, 0);
-		this.mass = 1;
+		this.pos = new Vector(0, 0); //will be in pixels
+		this.vel = new Vector(0, 0); //pixel/millisecond; ignore maybe due to small enviroment?
+		this.force = new Vector(0, 0);//mcg * pixel/millisecond^2
+		this.mass = 1;//mcg
+	}
+	physicsTick(deltaTime){ //deltaTime will be in milliseconds
+		this.force.set(0, 0);
+		//this.force.addSelf()
+		this.vel.addSelf(this.force.mulScalar(deltaTime/this.mass));
+		this.pos.addSelf(this.vel.mulScalar(deltaTime));
 	}
 }
 
@@ -52,12 +58,12 @@ class DistanceConstraint {
 		this.A = this.B = null;
 		this.distance = 100; //default
 	}
-    constrain(){
+    constrain(){ //sets the position of this.B so it lies in the distance constraint
         if (typeof this.A != Node || typeof this.B != Node){
             throw TypeError("A or B of <SpringEdge> object is not of type <Node>");
         }
         const disp = this.B.pos.sub(this.A.pos);
-        disp.normalizeSelf();
+        disp.normalizeSelf().mulScalarSelf(this.distance);
         this.B.pos.copy(this.A.pos.add(disp));
     }
 }
@@ -66,7 +72,7 @@ class Cell { //pressure soft body
 	
 }
 
-class Bacterium {
+class Bacterium { //
 	constructor(){
 		
 	}
