@@ -30,14 +30,13 @@ class Node {
 		this.force = new Vector(0, 0);//mcg * pixel/millisecond^2
 		this.mass = 1;//mcg
 	}
-	physicsTick(deltaTime){ //deltaTime will be in milliseconds
-		this.force.set(0, 0);
-		//add all forces onto it
+	physicsTick(deltaTime, damping){ //deltaTime will be in milliseconds
 
 		const vel = this.pos.sub(this.posPrev);
 		vel.addSelf(this.force.divScalar(this.mass));
-		
-		vel.mulScalarSelf(0.95) // damping factor;
+		this.force.set(0, 0);
+
+		vel.mulScalarSelf(damping); // damping factor
 
 		const posNext = this.pos.add(vel);
 		this.posPrev.copy(this.pos);
@@ -45,9 +44,6 @@ class Node {
 		//this.pos next = this.pos + (this.pos - this.posPrev + this.force/this.mass)
 
 		this.stayInBound(0, 0, canvas.width, canvas.height); //optional
-		
-
-
 	}
 	stayInBound(minX, minY, maxX, maxY){
 		const posArr = this.pos.toArray();
@@ -75,7 +71,7 @@ class Node {
 class SpringEdge {
 	constructor(){
 		this.A = this.B = null; //contains references to Nodes
-		this.stiffness = 1;
+		this.stiffness = 0.5;
 		this.restLength = 100;
 		this.damping = 0;
 	}
@@ -84,7 +80,19 @@ class SpringEdge {
             throw TypeError("A or B of <SpringEdge> object is not of type <Node>");
         }
         const currentLength = this.A.pos.sub(this.B.pos).length();
-		return this.stiffness * (currentLength - this.restingLength);
+		let force = this.stiffness * (currentLength - this.restLength);
+		const AToBDir = this.B.pos.sub(this.A.pos).normalizeSelf();
+		if (AToBDir.length() == 0){
+			console.log("catch clip");
+			AToBDir.set(1, 0);
+		}
+
+		//damping force
+
+		
+		this.A.force.addSelf(AToBDir.mulScalar(force));
+		this.B.force.addSelf(AToBDir.mulScalar(-force));
+		return force;
 	}
 }
 
@@ -93,18 +101,14 @@ class DistanceConstraint {
 		this.A = this.B = null;
 		this.distance = 100; //default
 	}
-    constrain(){ //sets the position of nodes so they lie in the distance constraint
+    constrain(){//sets the position of this.B so it lies in the distance constraint
         if (!(this.A instanceof Node && this.B instanceof Node)){
-            throw TypeError("A or B of <SpringEdge> object is not of type <Node>");
+            throw TypeError("A or B of <DistanceConstraint> object is not of type <Node>");
         }
-		const midPos = this.A.pos.add(this.B.pos).divScalarSelf(2);
-		const AToMidDir = midPos.sub(this.A.pos).normalizeSelf();
-		if (AToMidDir.length() == 0){
-			console.log("catch clip");
-			AToMidDir.set(1, 0);
-		}
-		this.B.pos.copy(midPos.add(AToMidDir.mulScalar(this.distance/2)));
-		this.A.pos.copy(midPos.add(AToMidDir.mulScalar(-this.distance/2)));
+		const disp = this.B.pos.sub(this.A.pos);
+		disp.normalizeSelf();
+		disp.normalizeSelf().mulScalarSelf(this.distance);
+		this.B.pos.copy(this.A.pos.add(disp));
     }
 }
 
@@ -121,13 +125,14 @@ class AngleConstraint {
 			throw RangeError("AngleConstraint.maxAngle is less than minAngle");
 		let toA = this.A.pos.sub(this.B.pos);
 		let toC = this.C.pos.sub(this.B.pos);
-		let ang = toA.toRadians() - toC.toRadians(); //get smaller angle
+		//get smaller angle
+		let ang = toC.toRadians() - toA.toRadians(); 
 		if (ang > Math.PI) ang -= Math.PI * 2;
 		if (ang < -Math.PI) ang += Math.PI * 2;
 		if (Math.abs(ang) < this.minAngle){
 			const unitAng = ang / Math.abs(ang);
-			toA.rotateRadiansSelf(-unitAng*(this.minAngle-ang)/2);
-			toC.rotateRadiansSelf(unitAng*(this.minAngle-ang)/2);
+			toA.rotateRadiansSelf(-unitAng*(this.minAngle- Math.abs(ang))/2);
+			toC.rotateRadiansSelf(unitAng*(this.minAngle-Math.abs(ang))/2);
 			this.A.pos.copy(this.B.pos.add(toA));
 			this.C.pos.copy(this.B.pos.add(toC));
 		}
@@ -143,8 +148,8 @@ class HardWormBody { //DistanceConstraint(Node, Node) in a line
 		this.angles = [];
 		for (let i = 0; i < nodeCount; i++){
 			const newNode = new Node();
-			newNode.pos.copy(headPos.addScalar(i*10));
-			newNode.posPrev = newNode.pos;
+			newNode.pos.copy(headPos.addScalar(i*15));
+			newNode.posPrev = newNode.pos.clone();
 			this.nodes.push(newNode);
 		}
 		for (let i = 1; i < nodeCount; i++){
@@ -159,7 +164,7 @@ class HardWormBody { //DistanceConstraint(Node, Node) in a line
 			newAngle.A = this.nodes[i - 1];
 			newAngle.B = this.nodes[i];
 			newAngle.C = this.nodes[i + 1];
-			newAngle.minAngle = Math.PI / 2;
+			newAngle.minAngle = 5*Math.PI / 6;
 			this.angles.push(newAngle);
 		}
 	}
@@ -171,7 +176,7 @@ class HardWormBody { //DistanceConstraint(Node, Node) in a line
 			angle.constrain();
 		}
 		for (const node of this.nodes){
-			node.physicsTick(deltaTime);
+			node.physicsTick(deltaTime, 0.9);
 		}
 		if (mouse.pressLeft)
 			this.nodes[0].pos.copy(mouse.pos);
@@ -179,11 +184,60 @@ class HardWormBody { //DistanceConstraint(Node, Node) in a line
 }
 
 class SoftWormBody { //SpringEdge(Node, Node) in a line
-
+	constructor(nodeCount, internodeLength, headPos){
+		if (!(headPos instanceof Vector))
+			throw TypeError(`headPos of SoftWormBody should be <Vector>, not <${headPos.constructor.name}>`);
+		this.nodes = [];
+		this.edges = [];
+		this.angles = [];
+		for (let i = 0; i < nodeCount; i++){
+			const newNode = new Node();
+			newNode.pos.copy(headPos.addScalar(i*15));
+			newNode.posPrev = newNode.pos.clone();
+			this.nodes.push(newNode);
+		}
+		for (let i = 1; i < nodeCount; i++){
+			const newEdge = new SpringEdge();
+			newEdge.A = this.nodes[i - 1];
+			newEdge.B = this.nodes[i];
+			newEdge.restLength = internodeLength;
+			newEdge.stiffness = 0.6;
+			this.edges.push(newEdge);
+		}
+		for (let i = 1; i < nodeCount - 1; i++){
+			const newAngle = new SpringEdge();
+			newAngle.A = this.nodes[i - 1];
+			newAngle.B = this.nodes[i + 1];
+			newAngle.restLength = internodeLength * 2;
+			newAngle.stiffness = 0.5;
+			this.angles.push(newAngle);
+		}
+	}
+	tick(deltaTime){
+		for (const edge of this.edges){
+			edge.calcForce();
+		}
+		for (const angle of this.angles){
+			angle.calcForce();
+		}
+		for (const node of this.nodes){
+			node.physicsTick(deltaTime, 0.9);
+		}
+		if (mouse.pressLeft)
+			this.nodes[0].pos.copy(mouse.pos);
+	}
 }
 
 class PressureSoftBody { //SpringEdge(Node, Node) in a loop
+	constructor(nodeCount, radius, centerPoint){
+		if (!(centerPoint instanceof Vector))
+			throw TypeError(`centerPoint of PressureSoftBody should be <Vector>, not <${centerPoint.constructor.name}>`);
+		this.nodes = [];
+		this.edges = [];
+	}
+	tick(deltaTime){
 
+	}
 }
 
 class Cell { //pressure soft body
@@ -192,7 +246,7 @@ class Cell { //pressure soft body
 
 class Bacterium { //
 	constructor(){
-		this.body = new HardWormBody(10, 20, new Vector(100, 100));
+		this.body = new SoftWormBody(3, 60, new Vector(100, 100));
 	}
 	player(){
 		
