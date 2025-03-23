@@ -111,10 +111,26 @@ class DistanceConstraint {
 class AngleConstraint {
 	constructor(){
 		this.A = this.B = this.C = null;
-		this.angle = Math.PI / 2;
+		this.minAngle = Math.PI / 2; //90 degrees
+		this.maxAngle = undefined; //no max angle
 	}
-	constrain(){ //sets the position of 
-
+	constrain(){ //sets the position of nodes so their angle is above a threshold
+		if (this.minAngle < 0 || this.maxAngle > Math.PI)
+			throw RangeError("AngleConstraint.minAngle or maxangle are too small (min < 0) or too big (max > pi)");
+		else if (this.maxAngle < this.minAngle)
+			throw RangeError("AngleConstraint.maxAngle is less than minAngle");
+		let toA = this.A.pos.sub(this.B.pos);
+		let toC = this.C.pos.sub(this.B.pos);
+		let ang = toA.toRadians() - toC.toRadians(); //get smaller angle
+		if (ang > Math.PI) ang -= Math.PI * 2;
+		if (ang < -Math.PI) ang += Math.PI * 2;
+		if (Math.abs(ang) < this.minAngle){
+			const unitAng = ang / Math.abs(ang);
+			toA.rotateRadiansSelf(-unitAng*(this.minAngle-ang)/2);
+			toC.rotateRadiansSelf(unitAng*(this.minAngle-ang)/2);
+			this.A.pos.copy(this.B.pos.add(toA));
+			this.C.pos.copy(this.B.pos.add(toC));
+		}
 	}
 }
 
@@ -124,9 +140,11 @@ class HardWormBody { //DistanceConstraint(Node, Node) in a line
 			throw TypeError(`headPos of HardWormBody should be <Vector>, not <${headPos.constructor.name}>`);
 		this.nodes = [];
 		this.edges = [];
+		this.angles = [];
 		for (let i = 0; i < nodeCount; i++){
 			const newNode = new Node();
-			newNode.pos.copy(headPos);
+			newNode.pos.copy(headPos.addScalar(i*10));
+			newNode.posPrev = newNode.pos;
 			this.nodes.push(newNode);
 		}
 		for (let i = 1; i < nodeCount; i++){
@@ -136,10 +154,21 @@ class HardWormBody { //DistanceConstraint(Node, Node) in a line
 			newEdge.distance = internodeLength;
 			this.edges.push(newEdge);
 		}
+		for (let i = 1; i < nodeCount - 1; i++){
+			const newAngle = new AngleConstraint();
+			newAngle.A = this.nodes[i - 1];
+			newAngle.B = this.nodes[i];
+			newAngle.C = this.nodes[i + 1];
+			newAngle.minAngle = Math.PI / 2;
+			this.angles.push(newAngle);
+		}
 	}
 	tick(deltaTime){
 		for (const edge of this.edges){
 			edge.constrain();
+		}
+		for (const angle of this.angles){
+			angle.constrain();
 		}
 		for (const node of this.nodes){
 			node.physicsTick(deltaTime);
