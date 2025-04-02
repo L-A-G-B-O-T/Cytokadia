@@ -89,7 +89,6 @@ class SpringEdge {
 
 		//damping force
 
-		
 		this.A.force.addSelf(AToBDir.mulScalar(force));
 		this.B.force.addSelf(AToBDir.mulScalar(-force));
 		return force;
@@ -234,14 +233,83 @@ class PressureSoftBody { //SpringEdge(Node, Node) in a loop
 			throw TypeError(`centerPoint of PressureSoftBody should be <Vector>, not <${centerPoint.constructor.name}>`);
 		this.nodes = [];
 		this.edges = [];
+		
+		const radVector = new Vector(radius, 0);
+
+		for (let i = 0; i < nodeCount; i++){
+			const newNode = new Node();
+			newNode.pos.copy(centerPoint);
+			newNode.pos.addSelf(radVector.rotateRadiansSelf(Math.PI * 2 / nodeCount));
+			newNode.posPrev = newNode.pos.clone();
+			this.nodes.push(newNode);
+		}
+		this.idealArea = this.findArea();
+		this.pressureStiffness = 0.2;
+
+		const internodeLength = Math.sqrt(2*radius**2*(1 - Math.cos(2*Math.PI/nodeCount)));
+		for (let i = 0; i < nodeCount; i++){
+			const newEdge = new SpringEdge();
+			newEdge.A = this.nodes[(i)%nodeCount];
+			newEdge.B = this.nodes[(i+1)%nodeCount];
+			newEdge.restLength = internodeLength;
+			newEdge.stiffness = 0.6;
+			this.edges.push(newEdge);
+		}
+	}
+	findArea(){
+		//trapezoid formula
+		let ret = 0;
+		for (let i = 0; i < this.nodes.length; i++){
+			const p1 = this.nodes[i].pos.toArray();
+			const p2 = this.nodes[(i + 1) % this.nodes.length].pos.toArray();
+
+			const width = p1[0] - p2[0];
+			const height = (p1[1] + p2[1])/2;
+
+			ret += width * height;
+		}
+		return ret;
+	}
+	pressureForce(){
+		const forceMagnitude = this.pressureStiffness * (this.findArea() - this.idealArea);
+		for (let i = 0; i < this.nodes.length; i++){
+			const node = this.nodes[(i+1)%this.nodes.length];
+			const prevNode = this.nodes[i];
+			const nextNode = this.nodes[(i+2)%this.nodes.length];
+
+			const normalVec = nextNode.pos.sub(prevNode.pos).rotateRadiansSelf(-Math.PI/2);
+			
+		}
 	}
 	tick(deltaTime){
-
+		for (const edge of this.edges){
+			edge.calcForce();
+		}
+		for (const node of this.nodes){
+			node.physicsTick(deltaTime, 0.9);
+		}
+		if (mouse.pressLeft)
+			this.nodes[1].pos.copy(mouse.pos);
 	}
 }
 
 class Cell { //pressure soft body
-	
+	constructor(){
+		this.body = new PressureSoftBody(6, 50, new Vector(500, 500));
+	}
+	tick(deltaTime){
+		this.body.tick(deltaTime);
+	}
+	draw(){
+		for (const node of this.body.nodes){
+			ctx.beginPath();
+			const posArr = node.pos.toArray();
+			ctx.ellipse(posArr[0], posArr[1], 3, 3, 0, 0, Math.PI * 2);
+			ctx.strokeStyle = "white";
+			ctx.stroke();
+			ctx.closePath();
+		}
+	}
 }
 
 class Bacterium { //
@@ -266,6 +334,7 @@ class Bacterium { //
 	}
 }
 var bacteria = [];
+var cells = [];
 var deltaTime = 50;
 var mouse = {
 	pos : new Vector(0, 0),
@@ -284,14 +353,17 @@ canvas.onmouseup = function(e){
 
 function mainloop(){
 	for (const bacterium of bacteria) bacterium.tick(deltaTime);
+	for (const cell of cells) cell.tick(deltaTime);
 
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
     for (const bacterium of bacteria) bacterium.draw();
+	for (const cell of cells) cell.draw();
 }
 
 function initialize(){
 	console.log("init");
-    bacteria.push(new Bacterium());
+	cells.push(new Cell());
+    //bacteria.push(new Bacterium());
 	setInterval(mainloop, deltaTime);
 }
 
