@@ -30,7 +30,7 @@ class Node {
 		this.force = new Vector(0, 0);//mcg * pixel/millisecond^2
 		this.mass = 1;//mcg
 	}
-	physicsTick(deltaTime, damping){ //deltaTime will be in milliseconds
+	physicsTick(t, damping){ //deltaTime will be in milliseconds
 
 		const vel = this.pos.sub(this.posPrev);
 		vel.addSelf(this.force.divScalar(this.mass));
@@ -167,18 +167,16 @@ class HardWormBody { //DistanceConstraint(Node, Node) in a line
 			this.angles.push(newAngle);
 		}
 	}
-	tick(deltaTime){
+	tick(t){
 		for (const edge of this.edges){
 			edge.constrain();
 		}
 		for (const angle of this.angles){
-			angle.constrain();
+			//angle.constrain();
 		}
 		for (const node of this.nodes){
-			node.physicsTick(deltaTime, 0.9);
+			node.physicsTick(t, 0.9);
 		}
-		if (mouse.pressLeft)
-			this.nodes[0].pos.copy(mouse.pos);
 	}
 }
 
@@ -212,7 +210,7 @@ class SoftWormBody { //SpringEdge(Node, Node) in a line
 			this.angles.push(newAngle);
 		}
 	}
-	tick(deltaTime){
+	tick(t){
 		for (const edge of this.edges){
 			edge.calcForce();
 		}
@@ -220,7 +218,7 @@ class SoftWormBody { //SpringEdge(Node, Node) in a line
 			angle.calcForce();
 		}
 		for (const node of this.nodes){
-			node.physicsTick(deltaTime, 0.9);
+			node.physicsTick(t, 0.9);
 		}
 		if (mouse.pressLeft)
 			this.nodes[0].pos.copy(mouse.pos);
@@ -244,7 +242,7 @@ class PressureSoftBody { //SpringEdge(Node, Node) in a loop
 			this.nodes.push(newNode);
 		}
 		this.idealArea = this.findArea();
-		this.pressureStiffness = 0.2;
+		this.pressureStiffness = 0.0001;
 
 		const internodeLength = Math.sqrt(2*radius**2*(1 - Math.cos(2*Math.PI/nodeCount)));
 		for (let i = 0; i < nodeCount; i++){
@@ -252,7 +250,7 @@ class PressureSoftBody { //SpringEdge(Node, Node) in a loop
 			newEdge.A = this.nodes[(i)%nodeCount];
 			newEdge.B = this.nodes[(i+1)%nodeCount];
 			newEdge.restLength = internodeLength;
-			newEdge.stiffness = 0.6;
+			newEdge.stiffness = 0.8;
 			this.edges.push(newEdge);
 		}
 	}
@@ -271,36 +269,56 @@ class PressureSoftBody { //SpringEdge(Node, Node) in a loop
 		return ret;
 	}
 	pressureForce(){
-		const forceMagnitude = this.pressureStiffness * (this.findArea() - this.idealArea);
+		const forceMagnitude = this.pressureStiffness * (this.idealArea - this.findArea());
+		
 		for (let i = 0; i < this.nodes.length; i++){
 			const node = this.nodes[(i+1)%this.nodes.length];
 			const prevNode = this.nodes[i];
 			const nextNode = this.nodes[(i+2)%this.nodes.length];
 
-			const normalVec = nextNode.pos.sub(prevNode.pos).rotateRadiansSelf(-Math.PI/2);
+			const normalVec = nextNode.pos.sub(prevNode.pos).rotateRadiansSelf(-Math.PI/2).normalizeSelf();
 			
+			node.force.addSelf(normalVec.mulScalarSelf(forceMagnitude));			
 		}
 	}
-	tick(deltaTime){
+	tick(t){
 		for (const edge of this.edges){
 			edge.calcForce();
 		}
+		
+		this.pressureForce();
+		
 		for (const node of this.nodes){
-			node.physicsTick(deltaTime, 0.9);
+			if (mouse.pressLeft){
+				node.force.addSelf(mouse.pos.sub(node.pos).normalizeSelf().mulScalarSelf(2));
+			}
+			node.physicsTick(t, 0.9);
 		}
-		if (mouse.pressLeft)
-			this.nodes[1].pos.copy(mouse.pos);
 	}
 }
 
 class Cell { //pressure soft body
 	constructor(){
-		this.body = new PressureSoftBody(6, 50, new Vector(500, 500));
+		this.body = new PressureSoftBody(30, 50, new Vector(500, 500));
 	}
-	tick(deltaTime){
+	tick(t){
 		this.body.tick(deltaTime);
 	}
 	draw(){
+		
+		for (const edge of this.body.edges){
+			ctx.beginPath();
+			const p1 = edge.A.pos.toArray();
+			const p2 = edge.B.pos.toArray();
+			
+			ctx.moveTo(p1[0], p1[1]);
+			ctx.lineTo(p2[0], p2[1]);
+			
+			ctx.strokeStyle = "white";
+			ctx.stroke();
+			ctx.closePath();
+		}
+		ctx.closePath();
 		for (const node of this.body.nodes){
 			ctx.beginPath();
 			const posArr = node.pos.toArray();
@@ -313,21 +331,89 @@ class Cell { //pressure soft body
 }
 
 class Bacterium { //
-	constructor(){
-		this.body = new SoftWormBody(3, 60, new Vector(100, 100));
+	constructor(nC, cNC, start){
+		this.nodeCount = nC;
+		this.cytoplasmNodeCount = cNC;
+		//this.flagellumNodeCount = this.nodeCount - this.cytoplasmNodeCount
+		
+		this.body = new HardWormBody(this.nodeCount, 10, start);
+		this.head = this.body.nodes[0];
+		
+		this.thicknessAt = Array(this.nodeCount);
+		for (let i = 0; i < this.nodeCount; i++)
+			if (i < this.cytoplasmNodeCount) this.thicknessAt[i] = 10; else this.thicknessAt[i] = 2;
+		//use for parametric equations
+		this.bodyPoints = []; 
+		let i = 0;
+		for (; i < this.cytoplasmNodeCount*2+6; i++) this.bodyPoints.push(new Vector(0, 0));
+		this.calcParametric();
+		
+		this.AI = {
+			isPlayer : false,
+			targetDir : new Vector(0, 0),
+		}
+	}
+	calcParametric(){
+		let i = 0;
+		for (; i < this.cytoplasmNodeCount; i++){ //start with the side of the head -> side of tail
+			const p1 = this.body.nodes[i];
+			const p2 = this.body.nodes[i+1];
+			
+			const normalVec = p1.pos.sub(p2.pos).normalizeSelf().rotateRadiansSelf(Math.PI/2).mulScalarSelf(this.thicknessAt[i]); //angle to next Node... if last node return previous value
+			this.bodyPoints[i].copy(normalVec.add(p1.pos));
+		}
+		for (let j = 0; j < 3; j++){//back of tail
+			const p1 = this.body.nodes[this.cytoplasmNodeCount-1];
+			const p2 = this.body.nodes[this.cytoplasmNodeCount];
+			
+			const normalVec = p1.pos.sub(p2.pos).normalizeSelf().rotateRadiansSelf(Math.PI/4*(j+3)).mulScalarSelf(this.thicknessAt[this.cytoplasmNodeCount-1]); //angle to next Node... if last node return previous value
+			this.bodyPoints[i].copy(normalVec.add(p1.pos));
+			i++;
+		}
+		for (let j = this.cytoplasmNodeCount - 1; j >= 0; j--){ //start with the side of the head -> side of tail
+			const p1 = this.body.nodes[j];
+			const p2 = this.body.nodes[j+1];
+			
+			const normalVec = p1.pos.sub(p2.pos).normalizeSelf().rotateRadiansSelf(-Math.PI/2).mulScalarSelf(this.thicknessAt[j]); //angle to next Node... if last node return previous value
+			this.bodyPoints[i].copy(normalVec.add(p1.pos));
+			i++;
+		}
+		for (let j = 0; j < 3; j++){//back of tail
+			const p1 = this.body.nodes[0];
+			const p2 = this.body.nodes[1];
+			
+			const normalVec = p1.pos.sub(p2.pos).normalizeSelf().rotateRadiansSelf(Math.PI/4*(j-1)).mulScalarSelf(this.thicknessAt[0]); //angle to next Node... if last node return previous value
+			this.bodyPoints[i].copy(normalVec.add(p1.pos));
+			i++;
+		}
 	}
 	player(){
-		
+		if (mouse.pressLeft)
+			this.AI.targetDir.copy(mouse.pos.sub(this.head.pos).normalizeSelf());
+		else
+			this.AI.targetDir.set(0, 0);
 	}
-	tick(deltaTime){
-		this.body.tick(deltaTime);
+	tick(t){
+		if (this.AI.isPlayer) this.player();
+		this.head.force.addSelf(this.AI.targetDir.mulScalar(0.5).rotateRadiansSelf(Math.sin(t)));
+		this.body.tick(t);
 	}
 	draw(){
-		for (const node of this.body.nodes){
+		for (let i = this.cytoplasmNodeCount; i < this.nodeCount; i++){
 			ctx.beginPath();
-			const posArr = node.pos.toArray();
-			ctx.ellipse(posArr[0], posArr[1], 3, 3, 0, 0, Math.PI * 2);
+			const posArr = this.body.nodes[i].pos.toArray();
+			const w = this.thicknessAt[i];
+			ctx.ellipse(posArr[0], posArr[1], w, w, 0, 0, Math.PI * 2);
 			ctx.strokeStyle = "white";
+			ctx.stroke();
+			ctx.closePath();
+		}
+		this.calcParametric();
+		for (const point of this.bodyPoints){
+			ctx.beginPath();
+			const posArr = point.toArray();
+			ctx.ellipse(posArr[0], posArr[1], 2, 2, 0, 0, Math.PI * 2);
+			ctx.strokeStyle = "red";
 			ctx.stroke();
 			ctx.closePath();
 		}
@@ -335,7 +421,8 @@ class Bacterium { //
 }
 var bacteria = [];
 var cells = [];
-var deltaTime = 50;
+var deltaTime = 30;
+var timeLast = new Date().getTime();
 var mouse = {
 	pos : new Vector(0, 0),
 	pressLeft : false, 
@@ -352,18 +439,26 @@ canvas.onmouseup = function(e){
 };
 
 function mainloop(){
-	for (const bacterium of bacteria) bacterium.tick(deltaTime);
-	for (const cell of cells) cell.tick(deltaTime);
+	for (const bacterium of bacteria) bacterium.tick(timeLast);
+	for (const cell of cells) cell.tick(timeLast);
 
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
     for (const bacterium of bacteria) bacterium.draw();
 	for (const cell of cells) cell.draw();
+	
+	const timeCurrent = new Date().getTime();
+	ctx.fillStyle = "white";
+	ctx.fillText(`deltaTime: ${timeCurrent - timeLast}`,10,10);
+	//console.log(timeCurrent - timeLast);
+	timeLast = timeCurrent;
+	
 }
 
 function initialize(){
 	console.log("init");
-	cells.push(new Cell());
-    //bacteria.push(new Bacterium());
+	//cells.push(new Cell());
+    bacteria.push(new Bacterium(10, 5, new Vector(200,200)));
+	bacteria[0].AI.isPlayer = true;
 	setInterval(mainloop, deltaTime);
 }
 
