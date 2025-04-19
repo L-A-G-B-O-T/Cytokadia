@@ -20,24 +20,66 @@ ctx.fillRegularPolygon = function(centerX, centerY, radius, rotation, sides){
 	ctx.fill();
 	ctx.closePath();
 };
+ctx.strokeCircle = function(center, radius, angleStart, angleEnd){
+	ctx.beginPath();
+	ctx.ellipse(center.x, center.y, radius, radius, 0, angleStart, angleEnd);
+	ctx.stroke();
+	ctx.closePath();
+}
+
 
 ctx.fillRegularPolygon(canvas.width / 2, canvas.height / 2, 100, 0, 3);
 
+const minLimit = new Vector(-5, -5);
+const maxLimit = new Vector(5, 5);
+
+function insertionSort(arr){
+	for (let i = 1; i < arr.length; i++){
+		let insert_index = i;
+		let current_value = arr[i];
+		for (let j = i - 1; j < -1; j--){
+			if (arr[j] > current_value){
+				arr[j + 1] = arr[j];
+				insert_index = j;
+			} else {
+				break;
+			}
+		}
+		arr[insert_index] = current_value;
+	}
+}
+
 class Node {
+	static xposGreater(a, b){
+		return a.pos.x - b.pos.x;
+	}
 	constructor(){
 		this.pos = new Vector(0, 0); //will be in pixels
+		this.nextPosAcc = []; //accumulator for all positions
 		this.posPrev = new Vector(0, 0); //stores the previous position for Verlet Integration
 		this.force = new Vector(0, 0);//mcg * pixel/millisecond^2
-		this.mass = 1;//mcg
+		this.mass = 1;//imaginary mass unit
 	}
 	physicsTick(t, damping){ //deltaTime will be in milliseconds
-
+		
+		if (this.nextPosAcc.length > 0){
+			let averageNewPos = this.nextPosAcc[0];
+			for (let i = 1; i < this.nextPosAcc.length; i++){
+				averageNewPos.addSelf(this.nextPosAcc[i]);
+			}
+			averageNewPos.divScalarSelf(this.nextPosAcc.length);
+			
+			this.pos.copy(averageNewPos);
+			this.nextPosAcc.length = 0;
+		}
+		
 		const vel = this.pos.sub(this.posPrev);
 		vel.addSelf(this.force.divScalar(this.mass));
+		vel.clampSelf(minLimit, maxLimit);
 		this.force.set(0, 0);
 
 		vel.mulScalarSelf(damping); // damping factor
-
+		
 		const posNext = this.pos.add(vel);
 		this.posPrev.copy(this.pos);
 		this.pos.copy(posNext);
@@ -65,6 +107,25 @@ class Node {
 			this.pos.set(undefined, maxY);
 			this.posPrev.copy(this.pos.sub(vel));
 		}
+	}
+	collideWithNode(otherNode, minDistance){
+		const otherPos = otherNode.pos;
+		const displacement = otherPos.sub(this.pos);
+		if (displacement.length() < minDistance){
+			const moveDist = (minDistance - displacement.length())/2 //positive value, would be applied to this node
+			
+			const moveDisp = displacement.normalize().mulScalarSelf(-moveDist);
+			this.nextPosAcc.push(this.pos.add(moveDisp));
+			otherNode.nextPosAcc.push(otherPos.sub(moveDisp));
+		}
+	}
+	collideWithNodes(nodesList){
+		for (const node of nodesList){
+			
+		}
+	}
+	collideWithPolygon(pointList){
+		
 	}
 }
 
@@ -111,29 +172,68 @@ class DistanceConstraint {
     }
 }
 
+class DistanceConstraint_Bi extends DistanceConstraint{
+	constructor(){
+		super();
+	}
+	constrain(){
+        if (!(this.A instanceof Node && this.B instanceof Node)){
+			throw TypeError("A or B of <DistanceConstraint> object is not of type <Node>");
+        }
+		const midPoint = this.A.pos.add(this.B.pos).divScalar(2);
+	}
+}
+
 class AngleConstraint {
 	constructor(){
 		this.A = this.B = this.C = null;
 		this.minAngle = Math.PI / 2; //90 degrees
-		this.maxAngle = undefined; //no max angle
+		this.maxAngle = 3*Math.PI / 2; //no max angle
 	}
 	constrain(){ //sets the position of nodes so their angle is above a threshold
-		if (this.minAngle < 0 || this.maxAngle > Math.PI)
-			throw RangeError("AngleConstraint.minAngle or maxangle are too small (min < 0) or too big (max > pi)");
+		if (this.minAngle < 0 || this.maxAngle > 2*Math.PI)
+			throw RangeError("AngleConstraint.minAngle or maxangle are too small (min < 0) or too big (max > 2pi)");
 		else if (this.maxAngle < this.minAngle)
 			throw RangeError("AngleConstraint.maxAngle is less than minAngle");
+		
 		let toA = this.A.pos.sub(this.B.pos);
 		let toC = this.C.pos.sub(this.B.pos);
+		
 		//get smaller angle
-		let ang = toC.toRadians() - toA.toRadians(); 
-		if (ang > Math.PI) ang -= Math.PI * 2;
-		if (ang < -Math.PI) ang += Math.PI * 2;
+		let ang = (toA.toRadians() - toC.toRadians());
+		ang = (ang + Math.PI*2) % (Math.PI*2)
+		
+		ctx.strokeStyle = "white";
+		
 		if (Math.abs(ang) < this.minAngle){
+			ctx.strokeStyle = "red";
+			
 			const unitAng = ang / Math.abs(ang);
-			toA.rotateRadiansSelf(-unitAng*(this.minAngle- Math.abs(ang))/2);
-			toC.rotateRadiansSelf(unitAng*(this.minAngle-Math.abs(ang))/2);
-			this.A.pos.copy(this.B.pos.add(toA));
-			this.C.pos.copy(this.B.pos.add(toC));
+			toA.rotateRadiansSelf(unitAng*(this.minAngle- Math.abs(ang))/2);
+			toC.rotateRadiansSelf(-unitAng*(this.minAngle-Math.abs(ang))/2);
+			this.A.nextPosAcc.push(toA.add(this.B.pos));
+			this.C.nextPosAcc.push(toC.add(this.B.pos));
+		}
+		else if (Math.abs(ang) > this.maxAngle){
+			ctx.strokeStyle = "red";
+			
+			const unitAng = ang / Math.abs(ang);
+			toA.rotateRadiansSelf(unitAng*(this.maxAngle-Math.abs(ang))/2);
+			toC.rotateRadiansSelf(-unitAng*(this.maxAngle-Math.abs(ang))/2);
+			this.A.nextPosAcc.push(toA.add(this.B.pos));
+			this.C.nextPosAcc.push(toC.add(this.B.pos));
+		}
+		
+		if (false){
+		ctx.strokeCircle(this.B.pos, 10, toC.toRadians(), toC.toRadians() + ang);
+		
+		ctx.strokeCircle(new Vector(100, 100), 40, 0, toA.toRadians());
+		ctx.strokeStyle = "blue";
+		ctx.strokeCircle(new Vector(100, 100), 36, 0, toC.toRadians());
+		ctx.strokeStyle = "green";
+		ctx.strokeCircle(new Vector(100, 100), 32, toC.toRadians(), toC.toRadians() + ang);
+		
+		ctx.fillText(`${ang}`, 100, 100);
 		}
 	}
 }
@@ -147,7 +247,7 @@ class HardWormBody { //DistanceConstraint(Node, Node) in a line
 		this.angles = [];
 		for (let i = 0; i < nodeCount; i++){
 			const newNode = new Node();
-			newNode.pos.copy(headPos.addScalar(i*15));
+			newNode.pos.copy(headPos.addScalar(i*internodeLength/Math.sqrt(2)));
 			newNode.posPrev = newNode.pos.clone();
 			this.nodes.push(newNode);
 		}
@@ -231,6 +331,8 @@ class PressureSoftBody { //SpringEdge(Node, Node) in a loop
 			throw TypeError(`centerPoint of PressureSoftBody should be <Vector>, not <${centerPoint.constructor.name}>`);
 		this.nodes = [];
 		this.edges = [];
+		this.angles = [];
+		
 		
 		const radVector = new Vector(radius, 0);
 
@@ -242,7 +344,7 @@ class PressureSoftBody { //SpringEdge(Node, Node) in a loop
 			this.nodes.push(newNode);
 		}
 		this.idealArea = this.findArea();
-		this.pressureStiffness = 0.0001;
+		this.pressureStiffness = 50;
 
 		const internodeLength = Math.sqrt(2*radius**2*(1 - Math.cos(2*Math.PI/nodeCount)));
 		for (let i = 0; i < nodeCount; i++){
@@ -252,11 +354,21 @@ class PressureSoftBody { //SpringEdge(Node, Node) in a loop
 			newEdge.restLength = internodeLength;
 			newEdge.stiffness = 0.8;
 			this.edges.push(newEdge);
+			
+			const newAngle = new AngleConstraint();
+			newAngle.A = this.nodes[(i)%nodeCount];
+			newAngle.B = this.nodes[(i + 1)%nodeCount];
+			newAngle.C = this.nodes[(i + 2)%nodeCount];
+			newAngle.minAngle = Math.PI/2;
+			this.angles.push(newAngle);
 		}
+		
+		this.sortedNodes = this.nodes.toSorted(Node.xposGreater);
 	}
 	findArea(){
 		//trapezoid formula
 		let ret = 0;
+
 		for (let i = 0; i < this.nodes.length; i++){
 			const p1 = this.nodes[i].pos.toArray();
 			const p2 = this.nodes[(i + 1) % this.nodes.length].pos.toArray();
@@ -266,10 +378,11 @@ class PressureSoftBody { //SpringEdge(Node, Node) in a loop
 
 			ret += width * height;
 		}
+		
 		return ret;
 	}
-	pressureForce(){
-		const forceMagnitude = this.pressureStiffness * (this.idealArea - this.findArea());
+	pressureForce(environmentalPressure){
+		const forceMagnitude = this.pressureStiffness * (this.idealArea / this.findArea() - 1);//outward pressure
 		
 		for (let i = 0; i < this.nodes.length; i++){
 			const node = this.nodes[(i+1)%this.nodes.length];
@@ -281,27 +394,53 @@ class PressureSoftBody { //SpringEdge(Node, Node) in a loop
 			node.force.addSelf(normalVec.mulScalarSelf(forceMagnitude));			
 		}
 	}
+	collideNodes(){
+		//insertion Sort the this.sortedNodes
+		insertionSort(this.sortedNodes);
+		for (let i = 0; i < this.sortedNodes.length; i++) {
+			const node1 = this.sortedNodes[i];
+			// check each of the other balls
+			for (let j = i + 1; j < this.sortedNodes.length; j++) {
+				const node2 = this.sortedNodes[j];
+		 
+				// stop when too far away
+				if (node2.left > node1.right) break;
+		 
+			  // check for collision
+				node1.collideWithNode(node2, 8);
+			}
+		}
+		
+	}
 	tick(t){
+		for (const angle of this.angles){
+			//angle.constrain();
+		}
 		for (const edge of this.edges){
 			edge.calcForce();
 		}
 		
 		this.pressureForce();
 		
+		this.collideNodes();		
+		
 		for (const node of this.nodes){
-			if (mouse.pressLeft){
-				node.force.addSelf(mouse.pos.sub(node.pos).normalizeSelf().mulScalarSelf(2));
-			}
+			//node.force.addSelf(new Vector(0, 0.1));
 			node.physicsTick(t, 0.9);
 		}
 	}
 }
 
 class Cell { //pressure soft body
-	constructor(){
-		this.body = new PressureSoftBody(30, 50, new Vector(500, 500));
+	constructor(nC, radius, start){
+		this.body = new PressureSoftBody(nC, radius, start);
+		this.AI = {
+			targetDir : new Vector(0, 0),
+			targetObj : null,
+		}
 	}
 	tick(t){
+		
 		this.body.tick(deltaTime);
 	}
 	draw(){
@@ -338,10 +477,13 @@ class Bacterium { //
 		
 		this.body = new HardWormBody(this.nodeCount, 10, start);
 		this.head = this.body.nodes[0];
+		for (let i = 0; i < this.cytoplasmNodeCount; i++)
+			this.body.nodes[i].mass = 10;
 		
 		this.thicknessAt = Array(this.nodeCount);
 		for (let i = 0; i < this.nodeCount; i++)
-			if (i < this.cytoplasmNodeCount) this.thicknessAt[i] = 10; else this.thicknessAt[i] = 1;
+			if (i < this.cytoplasmNodeCount) this.thicknessAt[i] = 10; else this.thicknessAt[i] = 2;
+		
 		//use for parametric equations
 		this.bodyPoints = []; 
 		let i = 0;
@@ -395,7 +537,7 @@ class Bacterium { //
 	}
 	tick(t){
 		if (this.AI.isPlayer) this.player();
-		this.head.force.addSelf(this.AI.targetDir.mulScalar(0.5).rotateRadiansSelf(Math.sin(t)));
+		this.head.force.addSelf(this.AI.targetDir.mulScalar(5).rotateRadiansSelf(Math.sin(t)));
 		this.body.tick(t);
 	}
 	draw(){
@@ -437,8 +579,6 @@ class Bacterium { //
 			ctx.stroke();
 			ctx.closePath();
 		}
-
-
 	}
 }
 var bacteria = [];
@@ -461,10 +601,11 @@ canvas.onmouseup = function(e){
 };
 
 function mainloop(){
+	ctx.clearRect(0, 0, canvas.width, canvas.height);
 	for (const bacterium of bacteria) bacterium.tick(timeLast);
 	for (const cell of cells) cell.tick(timeLast);
 
-	ctx.clearRect(0, 0, canvas.width, canvas.height);
+	
     for (const bacterium of bacteria) bacterium.draw();
 	for (const cell of cells) cell.draw();
 	
@@ -478,7 +619,7 @@ function mainloop(){
 
 function initialize(){
 	console.log("init");
-	//cells.push(new Cell());
+	for (let i = 0; i < 1; i++) cells.push(new Cell(30, 50, new Vector(100,500)));
     bacteria.push(new Bacterium(10, 5, new Vector(200,200)));
 	bacteria[0].AI.isPlayer = true;
 	setInterval(mainloop, deltaTime);
