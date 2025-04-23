@@ -169,3 +169,41 @@ class AngleConstraint {
 		}
 	}
 }
+
+class AngleConstraint_OneWay {
+    constructor(){
+        this.A = this.B = this.C = null;
+        this.minAngle = Math.PI / 2;
+        this.maxAngle = 3*Math.PI / 2;
+    }
+    constrain(){
+        if (this.minAngle < 0 || this.maxAngle > 2*Math.PI)
+			throw RangeError("AngleConstraint.minAngle or maxangle are too small (min < 0) or too big (max > 2pi)");
+		else if (this.maxAngle < this.minAngle)
+			throw RangeError("AngleConstraint.maxAngle is less than minAngle");
+		
+		let toA = this.A.pos.sub(this.B.pos);
+		let toC = this.C.pos.sub(this.B.pos);
+		
+		//get smaller angle
+		let ang = (toA.toRadians() - toC.toRadians());
+		ang = (ang + Math.PI*2) % (Math.PI*2)
+		
+		ctx.strokeStyle = "white";
+		
+		if (Math.abs(ang) < this.minAngle){
+			ctx.strokeStyle = "red";
+			
+			const unitAng = ang / Math.abs(ang);
+			toC.rotateRadiansSelf(-unitAng*(this.minAngle-Math.abs(ang)));
+			this.C.nextPosAcc.push(toC.add(this.B.pos)); //change to this.C.copy?
+		}
+		else if (Math.abs(ang) > this.maxAngle){
+			ctx.strokeStyle = "red";
+			
+			const unitAng = ang / Math.abs(ang);
+			toC.rotateRadiansSelf(-unitAng*(this.maxAngle-Math.abs(ang)));
+			this.C.nextPosAcc.push(toC.add(this.B.pos));
+		}
+    }
+}

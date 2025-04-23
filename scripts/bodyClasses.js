@@ -1,5 +1,5 @@
 class HardWormBody { //DistanceConstraint(Node, Node) in a line
-	constructor(nodeCount, internodeLength, headPos){
+	constructor(nodeCount, internodeLength, headPos, flexibility){
 		if (!(headPos instanceof Vector))
 			throw TypeError(`headPos of HardWormBody should be <Vector>, not <${headPos.constructor.name}>`);
 		this.nodes = [];
@@ -19,11 +19,12 @@ class HardWormBody { //DistanceConstraint(Node, Node) in a line
 			this.edges.push(newEdge);
 		}
 		for (let i = 1; i < nodeCount - 1; i++){
-			const newAngle = new AngleConstraint();
+			const newAngle = new AngleConstraint_OneWay();
 			newAngle.A = this.nodes[i - 1];
 			newAngle.B = this.nodes[i];
 			newAngle.C = this.nodes[i + 1];
-			newAngle.minAngle = 5*Math.PI / 6;
+			newAngle.minAngle = Math.PI - flexibility;
+            newAngle.maxAngle = Math.PI + flexibility;
 			this.angles.push(newAngle);
 		}
 	}
@@ -32,7 +33,7 @@ class HardWormBody { //DistanceConstraint(Node, Node) in a line
 			edge.constrain();
 		}
 		for (const angle of this.angles){
-			//angle.constrain();
+			angle.constrain();
 		}
 		for (const node of this.nodes){
 			node.physicsTick(t, 0.9);
@@ -202,6 +203,62 @@ class PressureSoftBody { //SpringEdge(Node, Node) in a loop
 		
 		for (const node of this.nodes){
 			//node.force.addSelf(new Vector(0, 0.1));
+			node.physicsTick(t, 0.9);
+		}
+	}
+}
+
+class CompoundBody {
+    constructor(){
+        this.referencedBodies = new WeakSet();
+        this.nodes = []; //stores references to Node() objects, in order of .physicsTick() execution
+        this.distConstraints = []; //stores references to DistanceConstraint objects, in order of constrain() execution
+        this.springs = []; //stores references to SpringEdge() objects
+        this.angles = []; //stores references to AngleConstraint() and AngleConstraint_OneWay() objects, in order of constrain() execution
+    }
+    offloadNodes(body){
+        this.referencedBodies.add(body);
+        for (const node of body.nodes)
+            this.nodes.push(node);
+    }
+    offloadEdges(body, typeArr){
+        if (!this.referencedBodies.has(body))
+            throw ReferenceError("offloadEdges(body, typeArr) returns false for CompoundBody.referncedBodies.has(body)");
+        if (!(typeArr == this.distConstraints || typeArr == this.springs))
+            throw TypeError("offloadEdges(body, typeArr) returns false for typeArr == springs or distconstraints");
+        for (const edge of body.edges){
+            typeArr.push(edge);
+        }
+    }
+    linkDC(body1, body2, body1NodeIndex, body2NodeIndex){
+        if (!this.referencedBodies.has(body1))
+            throw ReferenceError("linkDC(body1, body2, body1NodeIndex, body2NodeIndex) returns false for CompoundBody.referncedBodies.has(body1)");
+        const newEdge = new DistanceConstraint();
+        newEdge.A = body1.nodes[body1NodeIndex];
+        newEdge.B = body2.nodes[body2NodeIndex];
+        this.distConstraints.push(newEdge);
+        this.offloadNodes(body2);
+
+        return newEdge;
+    }
+    offloadAngles(body){
+        if (!this.referencedBodies.has(body))
+            throw ReferenceError("offloadAngles(body) returns false for CompoundBody.referncedBodies.has(body)");
+        for (const angle of body.angles){
+            this.angles.push(angle);
+        }
+    }
+    tick(t){
+		for (const edge of this.distConstraints){
+			edge.constrain();
+		}
+        for (const edge of this.springs){
+			edge.calcForce();
+		}
+		for (const angle of this.angles){
+			angle.constrain();
+		}
+		for (const node of this.nodes){
 			node.physicsTick(t, 0.9);
 		}
 	}
