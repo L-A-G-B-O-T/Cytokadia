@@ -223,7 +223,7 @@ class CompoundBody {
     }
     offloadEdges(body, typeArr){
         if (!this.referencedBodies.has(body))
-            throw ReferenceError("offloadEdges(body, typeArr) returns false for CompoundBody.referncedBodies.has(body)");
+            throw ReferenceError("offloadEdges(body, typeArr) returns false for CompoundBody.referencedBodies.has(body)");
         if (!(typeArr == this.distConstraints || typeArr == this.springs))
             throw TypeError("offloadEdges(body, typeArr) returns false for typeArr == springs or distconstraints");
         for (const edge of body.edges){
@@ -232,7 +232,7 @@ class CompoundBody {
     }
     linkDC(body1, body2, body1NodeIndex, body2NodeIndex){
         if (!this.referencedBodies.has(body1))
-            throw ReferenceError("linkDC(body1, body2, body1NodeIndex, body2NodeIndex) returns false for CompoundBody.referncedBodies.has(body1)");
+            throw ReferenceError("linkDC(body1, body2, body1NodeIndex, body2NodeIndex) returns false for CompoundBody.referencedBodies.has(body1)");
         const newEdge = new DistanceConstraint();
         newEdge.A = body1.nodes[body1NodeIndex];
         newEdge.B = body2.nodes[body2NodeIndex];
@@ -241,9 +241,35 @@ class CompoundBody {
 
         return newEdge;
     }
+	linkDC(body1, body2, body1NodeIndex, body2NodeIndex, angle1, angle2){
+        if (!this.referencedBodies.has(body1))
+            throw ReferenceError("linkDC(body1, body2, body1NodeIndex, body2NodeIndex, angle1, angle2) returns false for CompoundBody.referencedBodies.has(body1)");
+        const newEdge = new DistanceConstraint();
+        newEdge.A = body1.nodes[body1NodeIndex];
+        newEdge.B = body2.nodes[body2NodeIndex];
+        this.distConstraints.push(newEdge);
+        
+		if (angle1 != undefined){
+			angle1.A = body1.nodes[body1NodeIndex - 1];
+			angle1.B = newEdge.A;
+			angle1.C = newEdge.B;
+			this.angles.push(angle1);
+		}
+		if (angle2 != undefined){
+			angle2.A = newEdge.A;
+			angle2.B = newEdge.B;
+			angle2.C = body2.nodes[body2NodeIndex + 1];
+			this.angles.push(angle2);
+		}
+		
+		this.offloadNodes(body2);
+
+        return newEdge;
+    }
+
     offloadAngles(body){
         if (!this.referencedBodies.has(body))
-            throw ReferenceError("offloadAngles(body) returns false for CompoundBody.referncedBodies.has(body)");
+            throw ReferenceError("offloadAngles(body) returns false for CompoundBody.referencedBodies.has(body)");
         for (const angle of body.angles){
             this.angles.push(angle);
         }

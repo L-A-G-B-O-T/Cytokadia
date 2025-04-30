@@ -7,14 +7,25 @@ class Bacterium { //
         
 
 		this.cytoplasm = new HardWormBody(cNC, 10, start, Math.PI / 6);
-        this.flagellum = new HardWormBody(nC - cNC, 10, start, Math.PI); //change to 3 if there are bugs
-        this.body = new CompoundBody();
+        this.flagellum = new HardWormBody(nC - cNC, 10, this.cytoplasm.nodes[cNC-1].pos, Math.PI); //change to 3 if there are bugs
+        //join the flagellum to the cytoplasm; start with cytoplasm
+		this.body = new CompoundBody();
         this.body.offloadNodes(this.cytoplasm);
         this.body.offloadEdges(this.cytoplasm, this.body.distConstraints);
-        const link = this.body.linkDC(this.cytoplasm, this.flagellum, cNC - 1, 0, 10);
+		this.body.offloadAngles(this.cytoplasm);
+		//joining section
+		const hillock = new AngleConstraint_OneWay(); 
+		hillock.minAngle = Math.PI * 5/6;
+		hillock.maxAngle = Math.PI * 7/6;
+        const link = this.body.linkDC(this.cytoplasm, this.flagellum, cNC - 1, 0,
+			hillock,
+			undefined,
+		);
         link.distance = 10;
+
+		//offload the flagellum
         this.body.offloadEdges(this.flagellum, this.body.distConstraints);
-        this.body.offloadAngles(this.cytoplasm);
+        
         this.body.offloadAngles(this.flagellum);
 
 		this.head = this.body.nodes[0];
