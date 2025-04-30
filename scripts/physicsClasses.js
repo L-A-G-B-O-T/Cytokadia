@@ -1,3 +1,5 @@
+"use strict";
+
 class Node {
 	static xposGreater(a, b){
 		return a.pos.x - b.pos.x;

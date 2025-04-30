@@ -1,3 +1,5 @@
+"use strict";
+
 class HardWormBody { //DistanceConstraint(Node, Node) in a line
 	constructor(nodeCount, internodeLength, headPos, flexibility){
 		if (!(headPos instanceof Vector))

@@ -1,18 +1,28 @@
+"use strict";
+
 class Cell { //pressure soft body
 	constructor(nC, radius, start){
-		this.body = new PressureSoftBody(nC, radius, start);
+		this.cytoplasm = new PressureSoftBody(nC, radius, start);
+		
+		this.body = new CompoundBody();
+		this.body.offloadNodes(this.cytoplasm);
+		this.body.offloadEdges(this.cytoplasm, this.body.springs);
+		this.body.offloadAngles(this.cytoplasm);
+
 		this.AI = {
 			targetDir : new Vector(0, 0),
 			targetObj : null,
 		}
 	}
 	tick(t){
-		
+		if (this.AI.targetObj != null && Math.random() > 0.99){
+			//this.AI.targetDir 
+		}
 		this.body.tick(deltaTime);
 	}
 	draw(){
 		
-		for (const edge of this.body.edges){
+		for (const edge of this.body.springs){
 			ctx.beginPath();
 			const p1 = edge.A.pos.toArray();
 			const p2 = edge.B.pos.toArray();

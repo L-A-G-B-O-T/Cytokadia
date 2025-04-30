@@ -1,3 +1,5 @@
+"use strict";
+
 class Bacterium { //
 	constructor(nC, cNC, start){
 		this.nodeCount = nC;
