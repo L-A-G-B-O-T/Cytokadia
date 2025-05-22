@@ -32,3 +32,4 @@ ctx.fillRegularPolygon(canvas.width / 2, canvas.height / 2, 100, 0, 3);
 
 const minLimit = new Vector(-5, -5);
 const maxLimit = new Vector(5, 5);
+

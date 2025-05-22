@@ -1,3 +1,5 @@
+"use strict";
+
 class HardWormBody { //DistanceConstraint(Node, Node) in a line
 	constructor(nodeCount, internodeLength, headPos, flexibility){
 		if (!(headPos instanceof Vector))
@@ -102,7 +104,7 @@ function insertionSort(arr){
 	}
 }
 
-class PressureSoftBody { //SpringEdge(Node, Node) in a loop
+class PressureSoftBody { //SpringEdge(Node, Node) in a loop? 
 	constructor(nodeCount, radius, centerPoint){
 		if (!(centerPoint instanceof Vector))
 			throw TypeError(`centerPoint of PressureSoftBody should be <Vector>, not <${centerPoint.constructor.name}>`);
@@ -158,7 +160,7 @@ class PressureSoftBody { //SpringEdge(Node, Node) in a loop
 		
 		return ret;
 	}
-	pressureForce(environmentalPressure){
+	pressureForce(){
 		const forceMagnitude = this.pressureStiffness * (this.idealArea / this.findArea() - 1);//outward pressure
 		
 		for (let i = 0; i < this.nodes.length; i++){
@@ -181,7 +183,7 @@ class PressureSoftBody { //SpringEdge(Node, Node) in a loop
 				const node2 = this.sortedNodes[j];
 		 
 				// stop when too far away
-				if (node2.left > node1.right) break;
+				if (node2.pos.x - 8 > node1.pos.x + 10) break;
 		 
 			  // check for collision
 				node1.collideWithNode(node2, 8);
@@ -191,8 +193,88 @@ class PressureSoftBody { //SpringEdge(Node, Node) in a loop
 	}
 	tick(t){
 		for (const angle of this.angles){
-			//angle.constrain();
+			angle.constrain();
 		}
+		for (const edge of this.edges){
+			edge.calcForce();
+		}
+		
+		this.pressureForce();
+		
+		this.collideNodes();		
+		
+		for (const node of this.nodes){
+			node.physicsTick(t, 0.9);
+		}
+	}
+}
+
+class StrictSoftBody {//unfinished
+	constructor(nodeCount, radius, centerPoint){
+		if (!(centerPoint instanceof Vector))
+			throw TypeError(`centerPoint of PressureSoftBody should be <Vector>, not <${centerPoint.constructor.name}>`);
+		this.nodes = [];
+		this.edges = [];
+		
+		const radVector = new Vector(radius, 0);
+
+		for (let i = 0; i < nodeCount; i++){
+			const newNode = new Node();
+			newNode.pos.copy(centerPoint);
+			newNode.pos.addSelf(radVector.rotateRadiansSelf(Math.PI * 2 / nodeCount));
+			newNode.posPrev = newNode.pos.clone();
+			this.nodes.push(newNode);
+		}
+		this.idealArea = this.findArea();
+		this.pressureStiffness = 50;
+
+		const internodeLength = Math.sqrt(2*radius**2*(1 - Math.cos(2*Math.PI/nodeCount)));
+		for (let i = 0; i < nodeCount; i++){
+			const newEdge = new SpringEdge();
+			newEdge.A = this.nodes[(i)%nodeCount];
+			newEdge.B = this.nodes[(i+1)%nodeCount];
+			newEdge.restLength = internodeLength;
+			newEdge.stiffness = 0.8;
+			this.edges.push(newEdge);
+		}
+		
+		this.sortedNodes = this.nodes.toSorted(Node.xposGreater);
+	}
+	findArea(){
+		//trapezoid formula
+		let ret = 0;
+
+		for (let i = 0; i < this.nodes.length; i++){
+			const p1 = this.nodes[i].pos.toArray();
+			const p2 = this.nodes[(i + 1) % this.nodes.length].pos.toArray();
+
+			const width = p1[0] - p2[0];
+			const height = (p1[1] + p2[1])/2;
+
+			ret += width * height;
+		}
+		
+		return ret;
+	}
+	collideNodes(){
+		//insertion Sort the this.sortedNodes
+		insertionSort(this.sortedNodes);
+		for (let i = 0; i < this.sortedNodes.length; i++) {
+			const node1 = this.sortedNodes[i];
+			// check each of the other balls
+			for (let j = i + 1; j < this.sortedNodes.length; j++) {
+				const node2 = this.sortedNodes[j];
+		 
+				// stop when too far away
+				if (node2.pos.x - 8 > node1.pos.x + 10) break;
+		 
+			  // check for collision
+				node1.collideWithNode(node2, 8);
+			}
+		}
+		
+	}
+	tick(t){
 		for (const edge of this.edges){
 			edge.calcForce();
 		}
@@ -215,11 +297,16 @@ class CompoundBody {
         this.distConstraints = []; //stores references to DistanceConstraint objects, in order of constrain() execution
         this.springs = []; //stores references to SpringEdge() objects
         this.angles = []; //stores references to AngleConstraint() and AngleConstraint_OneWay() objects, in order of constrain() execution
-    }
+		this.referencedSoftBodies = [];
+	}
     offloadNodes(body){
         this.referencedBodies.add(body);
         for (const node of body.nodes)
             this.nodes.push(node);
+		if (body.constructor.name == "PressureSoftBody"){
+			this.referencedSoftBodies.push(body);
+			console.log("soft");
+		}
     }
     offloadEdges(body, typeArr){
         if (!this.referencedBodies.has(body))
@@ -284,6 +371,13 @@ class CompoundBody {
 		for (const angle of this.angles){
 			angle.constrain();
 		}
+		
+		this.referencedSoftBodies.forEach(body => {
+			body.pressureForce();
+			body.collideNodes();
+		});
+		
+		
 		for (const node of this.nodes){
 			node.physicsTick(t, 0.9);
 		}

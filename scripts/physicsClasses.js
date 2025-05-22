@@ -1,3 +1,5 @@
+"use strict";
+
 class Node {
 	static xposGreater(a, b){
 		return a.pos.x - b.pos.x;
@@ -114,6 +116,25 @@ class DistanceConstraint {
 		disp.normalizeSelf().mulScalarSelf(this.distance);
 		this.B.pos.copy(this.A.pos.add(disp));
     }
+}
+
+class DistanceConstraint_Bi {
+	constructor(){
+		this.A = this.B = null;
+		this.distance = 100;
+	}
+	constrain(){ //makes the position of this.A and this.B approach each other
+		if (!(this.A instanceof Node && this.B instanceof Node)){
+            throw TypeError("A or B of <DistanceConstraint> object is not of type <Node>");
+        }
+		const disp = this.B.pos.sub(this.A.pos);
+		const dist = disp.length();
+		const correctionAmount = (this.distance - dist) / 2;
+		
+		disp.normalizeSelf().mulScalarSelf(correctionAmount);
+		this.A.nextPosAcc.push(this.A.pos.add(disp));
+		this.B.nextPosAcc.push(this.B.pos.sub(disp));
+	}
 }
 
 class AngleConstraint {
