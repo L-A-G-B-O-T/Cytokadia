@@ -132,8 +132,8 @@ class DistanceConstraint_Bi {
 		const correctionAmount = (this.distance - dist) / 2;
 		
 		disp.normalizeSelf().mulScalarSelf(correctionAmount);
-		this.A.nextPosAcc.push(this.A.pos.add(disp));
-		this.B.nextPosAcc.push(this.B.pos.sub(disp));
+		this.A.nextPosAcc.push(this.A.pos.sub(disp));
+		this.B.nextPosAcc.push(this.B.pos.add(disp));
 	}
 }
 

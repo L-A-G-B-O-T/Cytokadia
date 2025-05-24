@@ -230,11 +230,10 @@ class StrictSoftBody {//unfinished
 
 		const internodeLength = Math.sqrt(2*radius**2*(1 - Math.cos(2*Math.PI/nodeCount)));
 		for (let i = 0; i < nodeCount; i++){
-			const newEdge = new SpringEdge();
+			const newEdge = new DistanceConstraint_Bi();
 			newEdge.A = this.nodes[(i)%nodeCount];
 			newEdge.B = this.nodes[(i+1)%nodeCount];
-			newEdge.restLength = internodeLength;
-			newEdge.stiffness = 0.8;
+			newEdge.distance = internodeLength;
 			this.edges.push(newEdge);
 		}
 		
@@ -273,6 +272,19 @@ class StrictSoftBody {//unfinished
 			}
 		}
 		
+	}
+	pressureForce(){
+		const forceMagnitude = this.pressureStiffness * (this.idealArea / this.findArea() - 1);//outward pressure
+		
+		for (let i = 0; i < this.nodes.length; i++){
+			const node = this.nodes[(i+1)%this.nodes.length];
+			const prevNode = this.nodes[i];
+			const nextNode = this.nodes[(i+2)%this.nodes.length];
+
+			const normalVec = nextNode.pos.sub(prevNode.pos).rotateRadiansSelf(-Math.PI/2).normalizeSelf();
+			
+			node.nextPosAcc.push(node.pos.add(normalVec.mulScalarSelf(forceMagnitude)));
+		}
 	}
 	tick(t){
 		for (const edge of this.edges){
@@ -374,7 +386,6 @@ class CompoundBody {
 		
 		this.referencedSoftBodies.forEach(body => {
 			body.pressureForce();
-			body.collideNodes();
 		});
 		
 		

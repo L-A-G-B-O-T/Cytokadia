@@ -2,12 +2,13 @@
 
 class Cell { //pressure soft body
 	constructor(nC, radius, start){
-		this.cytoplasm = new PressureSoftBody(nC, radius, start);
+		this.cytoplasm = new StrictSoftBody(nC, radius, start);
 		
 		this.body = new CompoundBody();
 		this.body.offloadNodes(this.cytoplasm);
-		this.body.offloadEdges(this.cytoplasm, this.body.springs);
-		this.body.offloadAngles(this.cytoplasm);
+		this.body.offloadEdges(this.cytoplasm, this.body.distConstraints);
+		this.body.referencedSoftBodies.push(this.cytoplasm);
+		//this.body.offloadAngles(this.cytoplasm);
 
 		this.AI = {
 			targetDir : new Vector(0, 0),
@@ -24,7 +25,7 @@ class Cell { //pressure soft body
 	}
 	draw(){
 		
-		for (const edge of this.body.springs){
+		for (const edge of this.body.distConstraints){
 			ctx.beginPath();
 			const p1 = edge.A.pos.toArray();
 			const p2 = edge.B.pos.toArray();
