@@ -1,8 +1,8 @@
 "use strict";
 
-class Cell { //pressure soft body
+class Cell { //soft body
 	constructor(nC, radius, start){
-		this.cytoplasm = new StrictSoftBody(nC, radius, start);
+		this.cytoplasm = new StrictSoftBody(nC, radius, start, 1.3);
 		
 		this.body = new CompoundBody();
 		this.body.offloadNodes(this.cytoplasm);
@@ -30,7 +30,27 @@ class Cell { //pressure soft body
 		this.body.tick(t);
 	}
 	draw(){
+		//circular body
+		ctx.fillStyle = "yellow";
+		ctx.strokeStyle = "pink";
+		ctx.lineWidth = 10;
 		
+		const startPoint = this.cytoplasm.nodes[0];
+		
+		ctx.beginPath();
+		ctx.moveTo(startPoint.x, startPoint.y);
+		for (let i = 1; i < this.cytoplasm.nodes.length+3; i++){
+			const node = this.cytoplasm.nodes[i % this.cytoplasm.nodes.length];
+			ctx.lineTo(node.pos.x, node.pos.y);
+		}
+		ctx.fill();
+		ctx.stroke();
+		ctx.closePath();
+
+		//arms
+		
+
+		/*
 		for (const edge of this.body.distConstraints){
 			ctx.beginPath();
 			const p1 = edge.A.pos.toArray();
@@ -51,5 +71,6 @@ class Cell { //pressure soft body
 			ctx.stroke();
 			ctx.closePath();
 		}
+		*/
 	}
 }

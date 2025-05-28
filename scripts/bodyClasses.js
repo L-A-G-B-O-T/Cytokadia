@@ -197,13 +197,11 @@ class PressureSoftBody { //SpringEdge(Node, Node) in a loop?
 }
 
 class StrictSoftBody {//unfinished
-	constructor(nodeCount, radius, centerPoint){
+	constructor(nodeCount, radius, centerPoint, squishFactor){
 		if (!(centerPoint instanceof Vector))
 			throw TypeError(`centerPoint of PressureSoftBody should be <Vector>, not <${centerPoint.constructor.name}>`);
 		this.nodes = [];
 		this.edges = [];
-
-		const squishFactor = 1.5;
 		
 		const radVector = new Vector(radius, 0);
 
@@ -354,7 +352,6 @@ class CompoundBody {
 
         return newEdge;
     }
-
     offloadAngles(body){
         if (!this.referencedBodies.has(body))
             throw ReferenceError("offloadAngles(body) returns false for CompoundBody.referencedBodies.has(body)");
