@@ -74,7 +74,7 @@ class Node {
 		
 	}
 }
-/*
+
 class SpringEdge {
 	constructor(){
 		this.A = this.B = null; //contains references to Nodes
@@ -101,7 +101,7 @@ class SpringEdge {
 		return force;
 	}
 }
-*/
+
 class DistanceConstraint {
 	constructor(){
 		this.A = this.B = null;

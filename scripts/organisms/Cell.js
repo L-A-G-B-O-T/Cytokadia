@@ -25,7 +25,6 @@ class Cell { //pressure soft body
 	tick(t){
 		if (this.AI.targetObj != null && Math.random() > 0.95){
 			this.AI.targetDir = this.AI.targetObj.body.nodes[0].pos.sub(this.body.nodes[0].pos).normalizeSelf();
-			console.log("ture");
 		}
 		this.cytoplasm.nodes.forEach(node => node.force.addSelf(this.AI.targetDir));
 		this.body.tick(t);
