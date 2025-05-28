@@ -215,6 +215,8 @@ class StrictSoftBody {//unfinished
 			throw TypeError(`centerPoint of PressureSoftBody should be <Vector>, not <${centerPoint.constructor.name}>`);
 		this.nodes = [];
 		this.edges = [];
+
+		const squishFactor = 1.5;
 		
 		const radVector = new Vector(radius, 0);
 
@@ -228,7 +230,7 @@ class StrictSoftBody {//unfinished
 		this.idealArea = this.findArea();
 		this.pressureStiffness = 50;
 
-		const internodeLength = Math.sqrt(2*radius**2*(1 - Math.cos(2*Math.PI/nodeCount)));
+		const internodeLength = Math.sqrt(2*radius**2*(1 - Math.cos(2*Math.PI/nodeCount))) / squishFactor;
 		for (let i = 0; i < nodeCount; i++){
 			const newEdge = new DistanceConstraint_Bi();
 			newEdge.A = this.nodes[(i)%nodeCount];

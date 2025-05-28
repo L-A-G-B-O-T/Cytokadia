@@ -8,7 +8,14 @@ class Cell { //pressure soft body
 		this.body.offloadNodes(this.cytoplasm);
 		this.body.offloadEdges(this.cytoplasm, this.body.distConstraints);
 		this.body.referencedSoftBodies.push(this.cytoplasm);
-		//this.body.offloadAngles(this.cytoplasm);
+		
+		this.arms = [];
+		for (let i = 0; i < 3; i++){
+			const newArm = new SoftWormBody(6, 50, new Vector(0, 0));
+			const connector = this.body.linkDC(this.cytoplasm, newArm, i, 0);
+			connector.distance = 20;
+			this.body.offloadEdges(newArm, this.body.springs);
+		}
 
 		this.AI = {
 			targetDir : new Vector(0, 0),
@@ -20,7 +27,7 @@ class Cell { //pressure soft body
 			this.AI.targetDir = this.AI.targetObj.body.nodes[0].pos.sub(this.body.nodes[0].pos).normalizeSelf();
 			console.log("ture");
 		}
-		this.body.nodes.forEach(node => node.force.addSelf(this.AI.targetDir.mulScalar(Math.random()*4)));
+		this.cytoplasm.nodes.forEach(node => node.force.addSelf(this.AI.targetDir));
 		this.body.tick(t);
 	}
 	draw(){
