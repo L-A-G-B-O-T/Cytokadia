@@ -11,10 +11,10 @@ class Cell { //pressure soft body
 		
 		this.arms = [];
 		for (let i = 0; i < 3; i++){
-			const newArm = new SoftWormBody(6, 50, new Vector(0, 0));
+			const newArm = new SoftWormBody(6, 10, new Vector(0, 0));
 			const connector = this.body.linkDC(this.cytoplasm, newArm, i, 0);
-			connector.distance = 20;
-			this.body.offloadEdges(newArm, this.body.springs);
+			connector.distance = 10;
+			this.body.offloadEdges(newArm, this.body.distConstraints);
 		}
 
 		this.AI = {

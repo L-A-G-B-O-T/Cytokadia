@@ -49,7 +49,6 @@ class SoftWormBody { //SpringEdge(Node, Node) in a line
 			throw TypeError(`headPos of SoftWormBody should be <Vector>, not <${headPos.constructor.name}>`);
 		this.nodes = [];
 		this.edges = [];
-		this.angles = [];
 		for (let i = 0; i < nodeCount; i++){
 			const newNode = new Node();
 			newNode.pos.copy(headPos.addScalar(i*15));
@@ -57,28 +56,16 @@ class SoftWormBody { //SpringEdge(Node, Node) in a line
 			this.nodes.push(newNode);
 		}
 		for (let i = 1; i < nodeCount; i++){
-			const newEdge = new SpringEdge();
+			const newEdge = new DistanceConstraint_Bi();
 			newEdge.A = this.nodes[i - 1];
 			newEdge.B = this.nodes[i];
-			newEdge.restLength = internodeLength;
-			newEdge.stiffness = 0.6;
+			newEdge.distance = internodeLength;
 			this.edges.push(newEdge);
-		}
-		for (let i = 1; i < nodeCount - 1; i++){
-			const newAngle = new SpringEdge();
-			newAngle.A = this.nodes[i - 1];
-			newAngle.B = this.nodes[i + 1];
-			newAngle.restLength = internodeLength * 2;
-			newAngle.stiffness = 0.5;
-			this.angles.push(newAngle);
 		}
 	}
 	tick(t){
 		for (const edge of this.edges){
-			edge.calcForce();
-		}
-		for (const angle of this.angles){
-			angle.calcForce();
+			edge.constrain();
 		}
 		for (const node of this.nodes){
 			node.physicsTick(t, 0.9);
