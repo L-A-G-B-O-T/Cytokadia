@@ -36,19 +36,21 @@ class Cell { //soft body
 	}
 	draw(){
 		
-		
+		ctx.save();
+		ctx.globalAlpha = 0.5;
 		{//circular body
 			ctx.fillStyle = "yellow";
 			ctx.strokeStyle = "white";
 			ctx.lineWidth = 10;
-			const startPoint = this.cytoplasm.nodes[0];
 			
+			let curve = [];
+
+			this.cytoplasm.nodes.forEach(node => {
+				curve.push(node.pos.x, node.pos.y);
+			});
 			ctx.beginPath();
-			ctx.moveTo(startPoint.pos.x, startPoint.pos.y);
-			for (let i = 1; i < this.cytoplasm.nodes.length+1; i++){
-				const node = this.cytoplasm.nodes[i % this.cytoplasm.nodes.length];
-				ctx.lineTo(node.pos.x, node.pos.y);
-			}
+			ctx.curve(curve, 0.5, 5, true);
+
 			ctx.fill();
 			ctx.closePath();
 			ctx.stroke();
@@ -61,16 +63,19 @@ class Cell { //soft body
 			ctx.strokeStyle = "white";
 			ctx.lineWidth = 10;
 			
-
+			let curve = [];
 			const startPoint = this.cytoplasm.nodes[i];
 			
-			ctx.beginPath();
-			ctx.moveTo(startPoint.pos.x, startPoint.pos.y);
+			curve.push(startPoint.pos.x, startPoint.pos.y);
+
 			arm.nodes.forEach(node => {
-				ctx.lineTo(node.pos.x, node.pos.y);
+				curve.push(node.pos.x, node.pos.y);
 			});
+
+			ctx.beginPath();
+			ctx.curve(curve);
 			ctx.stroke();
-		};
-		
+		}
+		ctx.restore();
 	}
 }

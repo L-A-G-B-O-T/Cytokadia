@@ -96,43 +96,32 @@ class Bacterium { //
 		this.body.tick(t);
 	}
 	draw(){
-		/*for (let i = 0; i < this.cytoplasmNodeCount; i++){
-			ctx.beginPath();
-			const point = this.body.nodes[i].pos;
-			const w = this.thicknessAt[i] * 0.8;
-			ctx.ellipse(point.x, point.y, w, w, 0, 0, Math.PI * 2);
-			
-			ctx.fill();
-			ctx.closePath();
-		}*/
 		this.calcParametric();
         ctx.fillStyle = "#00FF00";
-		//body
-		{
-			const startPoint = this.bodyPoints[this.bodyPoints.length - 1]; //Vector
-			ctx.beginPath();
-			ctx.moveTo(startPoint.x, startPoint.y);
+		
+		{//body
+			let curve = [];
+			this.bodyPoints.forEach(point => {
+				curve.push(point.x, point.y);
+			});
 			
-			for (let i = 0; i <= this.bodyPoints.length; i++){
-				const point = this.bodyPoints[i % this.bodyPoints.length];
-				ctx.lineTo(point.x, point.y);
-			}
-			ctx.fill();
-			ctx.closePath();
-		}
-		//flagellum
-		{
-			const startPoint = this.flagellum.nodes[0];
-			ctx.moveTo(startPoint.x, startPoint.y);
 			ctx.beginPath();
-			for (const node of this.flagellum.nodes){
-                const point = node.pos;
-				ctx.lineTo(point.x, point.y);
-			}
+			ctx.curve(curve, 0.5, 5, true);
+			ctx.fill();
+		}
+		
+		{//flagellum
 			ctx.strokeStyle = "#00FF00";
 			ctx.lineWidth = 2;
+			
+			let curve = [];
+			this.flagellum.nodes.forEach(node => {
+				curve.push(node.pos.x, node.pos.y);
+			});
+			
+			ctx.beginPath();
+			ctx.curve(curve);
 			ctx.stroke();
-			ctx.closePath();
 		}
 	}
 }
