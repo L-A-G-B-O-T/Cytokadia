@@ -2,7 +2,7 @@
 
 class Cell { //soft body
 	constructor(nC, radius, start){
-		this.cytoplasm = new StrictSoftBody(nC, radius, start, 1.3);
+		this.cytoplasm = new StrictSoftBody(nC, radius, start, 1.0);
 		
 		this.body = new CompoundBody();
 		this.body.offloadNodes(this.cytoplasm);
@@ -10,11 +10,16 @@ class Cell { //soft body
 		this.body.referencedSoftBodies.push(this.cytoplasm);
 		
 		this.arms = [];
-		for (let i = 0; i < 3; i++){
-			const newArm = new SoftWormBody(6, 10, new Vector(0, 0));
+		for (let i = 0; i < nC; i++){
+			if (i % 5 != 0){
+				this.arms.push(null);
+				continue;
+			}
+			const newArm = new SoftWormBody(6, 30, new Vector(0, 0));
 			const connector = this.body.linkDC(this.cytoplasm, newArm, i, 0);
-			connector.distance = 10;
+			connector.distance = 30;
 			this.body.offloadEdges(newArm, this.body.distConstraints);
+			this.arms.push(newArm);
 		}
 
 		this.AI = {
@@ -30,47 +35,42 @@ class Cell { //soft body
 		this.body.tick(t);
 	}
 	draw(){
-		//circular body
-		ctx.fillStyle = "yellow";
-		ctx.strokeStyle = "pink";
-		ctx.lineWidth = 10;
 		
-		const startPoint = this.cytoplasm.nodes[0];
 		
-		ctx.beginPath();
-		ctx.moveTo(startPoint.x, startPoint.y);
-		for (let i = 1; i < this.cytoplasm.nodes.length+3; i++){
-			const node = this.cytoplasm.nodes[i % this.cytoplasm.nodes.length];
-			ctx.lineTo(node.pos.x, node.pos.y);
-		}
-		ctx.fill();
-		ctx.stroke();
-		ctx.closePath();
-
-		//arms
-		
-
-		/*
-		for (const edge of this.body.distConstraints){
-			ctx.beginPath();
-			const p1 = edge.A.pos.toArray();
-			const p2 = edge.B.pos.toArray();
-			
-			ctx.moveTo(p1[0], p1[1]);
-			ctx.lineTo(p2[0], p2[1]);
-			
+		{//circular body
+			ctx.fillStyle = "yellow";
 			ctx.strokeStyle = "white";
-			ctx.stroke();
-			ctx.closePath();
-		}
-		ctx.closePath();
-		for (const node of this.body.nodes){
+			ctx.lineWidth = 10;
+			const startPoint = this.cytoplasm.nodes[0];
+			
 			ctx.beginPath();
-			ctx.ellipse(node.pos.x, node.pos.y, 3, 3, 0, 0, Math.PI * 2);
-			ctx.strokeStyle = "white";
-			ctx.stroke();
+			ctx.moveTo(startPoint.pos.x, startPoint.pos.y);
+			for (let i = 1; i < this.cytoplasm.nodes.length+1; i++){
+				const node = this.cytoplasm.nodes[i % this.cytoplasm.nodes.length];
+				ctx.lineTo(node.pos.x, node.pos.y);
+			}
+			ctx.fill();
 			ctx.closePath();
+			ctx.stroke();
 		}
-		*/
+		
+		for (let i = 0; i < this.cytoplasm.nodes.length; i++){//arms
+			const arm = this.arms[i];
+			if (arm == null) continue;
+
+			ctx.strokeStyle = "white";
+			ctx.lineWidth = 10;
+			
+
+			const startPoint = this.cytoplasm.nodes[i];
+			
+			ctx.beginPath();
+			ctx.moveTo(startPoint.pos.x, startPoint.pos.y);
+			arm.nodes.forEach(node => {
+				ctx.lineTo(node.pos.x, node.pos.y);
+			});
+			ctx.stroke();
+		};
+		
 	}
 }
