@@ -1,5 +1,7 @@
 "use strict";
 
+"use strict";
+
 var bacteria = [];
 var cells = [];
 var deltaTime = 30;
