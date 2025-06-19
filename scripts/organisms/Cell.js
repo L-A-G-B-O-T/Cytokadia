@@ -39,3 +39,29 @@ class Cell { //soft body
 		ctx.restore();
 	}
 }
+
+class Ameboid extends Cell{ //move via pseudopods
+	constructor(nC, radius, start){
+		super(nC, radius, start);
+		this.AI.pseudopods = Array(nC); //stores if each node is acting as a pseudopod
+		this.AI.stepTimer = new Date().getTime() + Math.random()*2000;
+		for (let i = 0; i < nC; i++){
+			this.AI.pseudopods[i] = (i % 4 != 0);
+		}
+	}
+	tick(t){
+		if (this.AI.targetObj != null && this.AI.stepTimer < new Date().getTime()){
+			this.AI.targetLoc = this.AI.targetObj.body.nodes[0].pos.clone();
+			this.AI.stepTimer = new Date().getTime() + Math.random()*2000;
+
+		}
+		for (let i = 0; i < this.cytoplasm.nC; i++){
+			if (!this.AI.pseudopods[i]) continue;
+			const pseudopod = this.cytoplasm.nodes[i];
+			const targetDir = this.AI.targetLoc.sub(pseudopod.pos).normalizeSelf();
+			pseudopod.force.addSelf(targetDir);
+		}
+		super.tick(t);
+	}
+	
+}
