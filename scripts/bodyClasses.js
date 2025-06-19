@@ -62,6 +62,7 @@ class SoftWormBody { //SpringEdge(Node, Node) in a line
 			newEdge.distance = internodeLength;
 			this.edges.push(newEdge);
 		}
+		this.nC = nodeCount;
 	}
 	tick(t){
 		for (const edge of this.edges){
@@ -200,7 +201,7 @@ class StrictSoftBody {//unfinished
 	constructor(nodeCount, radius, centerPoint, squishFactor){
 		if (!(centerPoint instanceof Vector))
 			throw TypeError(`centerPoint of PressureSoftBody should be <Vector>, not <${centerPoint.constructor.name}>`);
-		this.nodes = [];
+		this.nodes = []; this.nC = nodeCount;
 		this.edges = [];
 		
 		const radVector = new Vector(radius, 0);

@@ -23,8 +23,15 @@ ctx.fillRegularPolygon = function(centerX, centerY, radius, rotation, sides){
 ctx.strokeCircle = function(center, radius, angleStart, angleEnd){
 	ctx.beginPath();
 	ctx.ellipse(center.x, center.y, radius, radius, 0, angleStart, angleEnd);
-	ctx.stroke();
 	ctx.closePath();
+	ctx.stroke();
+}
+ctx.fillDot = function(center, radius, color){
+	ctx.fillStyle = color;
+	ctx.beginPath();
+	ctx.ellipse(center.x, center.y, radius, radius, 0, 0, Math.PI*2);
+	ctx.closePath();
+	ctx.fill();
 }
 
 
