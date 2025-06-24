@@ -38,10 +38,13 @@ function mainloop(){
 
 function initialize(){
 	console.log("init");
-	for (let i = 0; i < 1; i++) cells.push(new Ameboid(15, 100, new Vector(100,500)));
     bacteria.push(new Bacterium(10, 5, new Vector(200,200)));
 	bacteria[0].AI.isPlayer = true;
-	cells[0].AI.targetObj = bacteria[0];
+	for (let i = 0; i < 3; i++){ 
+		cells.push(new Ameboid(15, 100, new Vector(210*(i+1),500)));
+		cells[i].AI.targetObj = bacteria[0];
+	}
+	
 	setInterval(mainloop, deltaTime);
 }
 
