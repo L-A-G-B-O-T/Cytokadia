@@ -43,25 +43,32 @@ class Cell { //soft body
 class Ameboid extends Cell{ //move via pseudopods
 	constructor(nC, radius, start){
 		super(nC, radius, start);
-		this.AI.pseudopods = Array(nC); //stores if each node is acting as a pseudopod
+		this.AI.pseudopods = Array(nC); //stores pseudopod / not pseudopox
 		this.AI.stepTimer = new Date().getTime() + Math.random()*2000;
-		for (let i = 0; i < nC; i++){
-			this.AI.pseudopods[i] = (i % 4 != 0);
-		}
+		this.AI.pseudopodProportion = 0.25;
+		this.AI.moveSpeed = 0.25;
+		this.newPseudoPods(this.AI.pseudopodProportion);
 	}
 	tick(t){
+		if (t == undefined)
+			throw TypeError("Ameboid().tick(t) has t == undefined");
 		if (this.AI.targetObj != null && this.AI.stepTimer < new Date().getTime()){
 			this.AI.targetLoc = this.AI.targetObj.body.nodes[0].pos.clone();
 			this.AI.stepTimer = new Date().getTime() + Math.random()*2000;
-
+			this.newPseudoPods(this.AI.pseudopodProportion);
 		}
 		for (let i = 0; i < this.cytoplasm.nC; i++){
 			if (!this.AI.pseudopods[i]) continue;
 			const pseudopod = this.cytoplasm.nodes[i];
 			const targetDir = this.AI.targetLoc.sub(pseudopod.pos).normalizeSelf();
-			pseudopod.force.addSelf(targetDir);
+			pseudopod.force.addSelf(targetDir.mulScalarSelf(this.AI.moveSpeed / this.AI.pseudopodProportion));
 		}
 		super.tick(t);
 	}
-	
+	newPseudoPods(proportion){
+		const newIndexes = randomIntegerArray(this.cytoplasm.nC).slice(0, this.cytoplasm.nC * proportion);
+		this.AI.pseudopods.fill(false);
+		for (const i of newIndexes)
+			this.AI.pseudopods[i] = true;
+	}
 }

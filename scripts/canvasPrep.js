@@ -40,3 +40,14 @@ ctx.fillRegularPolygon(canvas.width / 2, canvas.height / 2, 100, 0, 3);
 const minLimit = new Vector(-5, -5);
 const maxLimit = new Vector(5, 5);
 
+function randomIntegerArray(count) {
+  const shuffled = [];
+  for (let i = 0; i < count; i++){
+	shuffled.push(i);
+  }
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled.slice(0, count);
+}
