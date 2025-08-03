@@ -71,4 +71,49 @@ class Ameboid extends Cell{ //move via pseudopods
 		for (const i of newIndexes)
 			this.AI.pseudopods[i] = true;
 	}
+	draw(){
+		ctx.save();
+		{//circular body
+			ctx.fillStyle = "rgba(255, 255, 0.0, 0.5)";
+			ctx.strokeStyle = "white";
+			ctx.lineWidth = 10;
+			
+			let curve = [];
+
+			this.cytoplasm.nodes.forEach(node => {
+				curve.push(node.pos.x, node.pos.y);
+			});
+			ctx.beginPath();
+			ctx.curve(curve, 0.5, 5, true);
+
+			ctx.fill();
+			ctx.closePath();
+			ctx.stroke();
+		}
+		ctx.restore();
+	}
+}
+
+class Devourer extends Ameboid { //reach over to you with pseudopods and pull you in, digesting you. 
+
+}
+
+class Spitter extends Ameboid { //build up pressure and spit granules. Like to quickly explode if you get too close, releasing nets. 
+
+}
+
+class Alarm extends Ameboid { //have a higher aggro radius, and alerts + boosts other immune cells
+
+}
+
+class Messenger extends Ameboid { //activates Factory cells
+
+}
+
+class Factory extends Ameboid { //Produces bio weapons
+
+}
+
+class Lounger extends Ameboid { //Unmoving cell / movement determined by surrounding environment, cosmetic
+
 }
