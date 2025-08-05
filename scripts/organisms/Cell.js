@@ -8,11 +8,6 @@ class Cell { //soft body
 		this.body.offloadNodes(this.cytoplasm);
 		this.body.offloadEdges(this.cytoplasm, this.body.distConstraints);
 		this.body.referencedSoftBodies.push(this.cytoplasm);
-		
-		this.AI = {
-			targetLoc : new Vector(0, 0),
-			targetObj : null,
-		}
 	}
 	tick(t){
 		this.body.tick(t);
@@ -43,10 +38,15 @@ class Cell { //soft body
 class Ameboid extends Cell{ //move via pseudopods
 	constructor(nC, radius, start){
 		super(nC, radius, start);
-		this.AI.pseudopods = Array(nC); //stores pseudopod / not pseudopox
-		this.AI.stepTimer = new Date().getTime() + Math.random()*2000;
-		this.AI.pseudopodProportion = 0.25;
-		this.AI.moveSpeed = 0.25;
+
+		this.AI = {
+			targetLoc : new Vector(0, 0),
+			targetObj : null,
+			pseudopods : Array(nC),
+			stepTimer : new Date().getTime() + Math.random()*2000,
+			pseudopodProportion : 0.25,
+			moveSpeed : 0.25,
+		}
 		this.newPseudoPods(this.AI.pseudopodProportion);
 	}
 	tick(t){
