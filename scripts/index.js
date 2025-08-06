@@ -40,10 +40,11 @@ function initialize(){
 	console.log("init");
     bacteria.push(new Bacterium(10, 5, new Vector(200,200)));
 	bacteria[0].AI.isPlayer = true;
-	for (let i = 0; i < 3; i++){ 
-		cells.push(new Ameboid(15, 100, new Vector(210*(i+1),500)));
-		cells[i].AI.targetObj = bacteria[0];
-	}
+	
+	cells.push(new DevourerCell(new Vector(210,500)));
+	cells[0].AI.targetObj = mouse;
+	cells.push(new SpitterCell(new Vector(210,500)));
+	cells[1].AI.targetObj = mouse;
 	
 	setInterval(mainloop, deltaTime);
 }

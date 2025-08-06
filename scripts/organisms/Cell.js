@@ -8,6 +8,8 @@ class Cell { //soft body
 		this.body.offloadNodes(this.cytoplasm);
 		this.body.offloadEdges(this.cytoplasm, this.body.distConstraints);
 		this.body.referencedSoftBodies.push(this.cytoplasm);
+
+		this.cytoplasmHue = 60;
 	}
 	tick(t){
 		this.body.tick(t);
@@ -15,7 +17,7 @@ class Cell { //soft body
 	draw(){
 		ctx.save();
 		{//circular body
-			ctx.fillStyle = "rgba(255, 255, 0.0, 0.5)";
+			ctx.fillStyle = `hsla(${this.cytoplasmHue}, 100%, 50%, 0.5)`;
 			ctx.strokeStyle = "white";
 			ctx.lineWidth = 10;
 			
@@ -40,8 +42,8 @@ class Ameboid extends Cell{ //move via pseudopods
 		super(nC, radius, start);
 
 		this.AI = {
-			targetLoc : new Vector(0, 0),
-			targetObj : null,
+			targetLoc : new Vector(0, 0), //location that the cell wants to move towards
+			targetObj : null, //object that the cell is interested in
 			pseudopods : Array(nC),
 			stepTimer : new Date().getTime() + Math.random()*2000,
 			pseudopodProportion : 0.25,
@@ -52,8 +54,9 @@ class Ameboid extends Cell{ //move via pseudopods
 	tick(t){
 		if (t == undefined)
 			throw TypeError("Ameboid().tick(t) has t == undefined");
-		if (this.AI.targetObj != null && this.AI.stepTimer < new Date().getTime()){
-			this.AI.targetLoc = this.AI.targetObj.body.nodes[0].pos.clone();
+
+		if (this.AI.stepTimer < new Date().getTime()){
+			this.updateTargetLoc();
 			this.AI.stepTimer = new Date().getTime() + Math.random()*2000;
 			this.newPseudoPods(this.AI.pseudopodProportion);
 		}
@@ -71,35 +74,74 @@ class Ameboid extends Cell{ //move via pseudopods
 		for (const i of newIndexes)
 			this.AI.pseudopods[i] = true;
 	}
-	draw(){
-		ctx.save();
-		{//circular body
-			ctx.fillStyle = "rgba(255, 255, 0.0, 0.5)";
-			ctx.strokeStyle = "white";
-			ctx.lineWidth = 10;
-			
-			let curve = [];
-
-			this.cytoplasm.nodes.forEach(node => {
-				curve.push(node.pos.x, node.pos.y);
-			});
-			ctx.beginPath();
-			ctx.curve(curve, 0.5, 5, true);
-
-			ctx.fill();
-			ctx.closePath();
-			ctx.stroke();
-		}
-		ctx.restore();
+	updateTargetLoc(){
+		if (this.AI.targetObj == null)
+			return;
+		this.AI.targetLoc = this.AI.targetObj.pos.clone();
 	}
 }
 
-class Devourer extends Ameboid { //reach over to you with pseudopods and pull you in, digesting you. 
-
+class DevourerCell extends Ameboid { //reach over to you with pseudopods and pull you in, digesting you. 
+	constructor(start){
+		super(15, 180, start);
+		this.cytoplasmHue = 60;
+	}
+	tick(t){
+		//search around itself for bacteria
+			//upon finding bacteria, lock on to one of its body nodes (head probably)
+			//AI.targetObj = body node
+		//search around itself for debris
+			
+		super.tick(t);
+	}
+	updateTargetLoc(){
+		if (this.AI.targetObj == null)
+			return;
+		this.AI.targetLoc.copy(this.AI.targetObj.pos);
+	}
 }
 
-class Spitter extends Ameboid { //build up pressure and spit granules. Like to quickly explode if you get too close, releasing nets. 
-
+class SpitterCell extends Ameboid { //build up pressure and spit granules. Like to quickly explode if you get too close, releasing nets. 
+	constructor(start){
+		super(15, 100, start);
+		this.cytoplasmHue = 120;
+		this.AI.spitDist = 300;
+		this.AI.fullArea = this.cytoplasm.idealArea;
+		this.AI.closeEnough = false;
+		this.cytoplasm.idealArea /= 2;
+	}
+	tick(t){
+		//build up pressure if not full (increase cytoplasm.idealArea or cytoplasm.pressureStiffness gradually)
+		if (this.cytoplasm.idealArea < this.AI.fullArea)
+			this.cytoplasm.idealArea += 100;
+		//search around itself for bacteria
+		//upon finding bacteria, lock on to one of its body nodes (head probably)
+		//if AI.targetObj is not null
+		if (this.AI.targetObj != null){
+			if (this.AI.closeEnough && this.cytoplasm.idealArea >= this.AI.fullArea){
+				//launch granules
+				//recoil
+				this.cytoplasm.idealArea /= 2;
+				//find node(s) closest to targetObj
+			}
+		}
+			//if targetObj is close enough AND pressure is full
+				//launch granules at bacteria from nodes closest to bacteria
+			//else move toward targetObj
+		
+		super.tick(t);
+	}
+	updateTargetLoc(){
+		//chose a point in between itself and AI.targetObj.pos
+		if (this.AI.targetObj == null)
+			return;
+		const randIndex = Math.floor(this.cytoplasm.nC * Math.random());
+		const selfPoint = this.cytoplasm.nodes[randIndex].pos;
+		const displacement = this.AI.targetObj.pos.sub(selfPoint)
+		const targetDir = displacement.normalize(); //direction from selfPoint to targetLoc
+		this.AI.targetLoc.copy(this.AI.targetObj.pos.sub(targetDir.mulScalarSelf(this.AI.spitDist)));
+		this.AI.closeEnough = displacement.length() < this.AI.spitDist;
+	}
 }
 
 class Alarm extends Ameboid { //have a higher aggro radius, and alerts + boosts other immune cells
