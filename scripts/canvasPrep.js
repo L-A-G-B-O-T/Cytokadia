@@ -37,8 +37,8 @@ ctx.fillDot = function(center, radius, color){
 
 ctx.fillRegularPolygon(canvas.width / 2, canvas.height / 2, 100, 0, 3);
 
-const minLimit = new Vector(-5, -5);
-const maxLimit = new Vector(5, 5);
+const minLimit = new Vector(-20, -20);
+const maxLimit = new Vector(20, 20);
 
 function randomIntegerArray(count) {
   const shuffled = [];
@@ -51,3 +51,48 @@ function randomIntegerArray(count) {
   }
   return shuffled.slice(0, count);
 }
+
+function findClosestNodeInLine(obj, line, low, high){ //bug: sometimes has infinite loop
+	if (!(obj.pos instanceof Vector))
+		throw TypeError("obj.pos not of type Vector() in findClosestNodesInLine(obj, line)");
+	if (!(line[0] instanceof Node))
+		throw TypeError("line is not of type Node[] in findClosestNodesInLine(obj, line)");
+	//start with nodes on the opposite ends of the line
+	if (high == -1) high = line.length - 1;
+	const nodeStart = line.at(low);
+	const nodeEnd = line.at(high);
+	const mid = low + Math.floor((high - low) / 2);
+	if (high - low < 2) return mid;
+	if (nodeStart.pos.distanceFrom(obj.pos) < nodeEnd.pos.distanceFrom(obj.pos)){
+		return findClosestNodeInLine(obj, line, low, mid);
+	} else {
+		return findClosestNodeInLine(obj, line, mid, high);
+	}
+}
+
+function findClosestNodeInLoop(obj, loop){
+	if (!(obj.pos instanceof Vector))
+		throw TypeError("obj.pos not of type Vector() in findClosestNodesInLoop(obj, loop)");
+	if (!(loop[0] instanceof Node))
+		throw TypeError("loop is not of type Node[] in findClosestNodesInLoop(obj, loop)");
+	if (loop.length < 4)
+		throw EvalError("loop.length < 4 in findClosestNodesInLoop(obj, loop)");
+	//prerequisite: obj.pos must exist as a Vector()
+	//start with two nodes on opposite sides of the loop
+	//depending on which one's closer, recursively call findClosestNodeInLine
+	const node1 = loop.at(0);
+	const node2 = loop.at(Math.floor(loop.length/2));
+	const firstQuarter = Math.floor(loop.length/4);
+	const thirdQuarter = Math.floor(loop.length*3/4);
+	if (node1.pos.distanceFrom(obj.pos) < node2.pos.distanceFrom(obj.pos)){
+		const halfLoop = loop.slice(thirdQuarter).concat(loop.slice(0, firstQuarter + 1));
+		const index = findClosestNodeInLine(obj, halfLoop, 0, -1); // return the loop index equivalent to the halfloop index
+		return (index + thirdQuarter) % loop.length;
+	} else {
+		const halfLoop = loop.slice(firstQuarter, thirdQuarter + 1);
+		const index = findClosestNodeInLine(obj, halfLoop, 0, -1); // return the loop index equivalent to the halfloop index
+		return index + firstQuarter;
+	}
+
+}
+
