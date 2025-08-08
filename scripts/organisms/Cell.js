@@ -165,18 +165,18 @@ class SpitterCell extends Ameboid { //build up pressure and spit granules. Like 
 	}
 }
 
-class Messenger extends Ameboid { //activates Factory cells and Alarm cells
+class MessengerCell extends Ameboid { //activates Factory cells and Alarm cells
 
 }
 
-class Alarm extends Ameboid { //have a higher aggro radius, and alerts + boosts other immune cells
+class AlarmCell extends Ameboid { //have a higher aggro radius, and alerts + boosts other immune cells
 
 }
 
-class Factory extends Ameboid { //Produces bio weapons
+class FactoryCell extends Ameboid { //Produces bio weapons
 
 }
 
-class Lounger extends Ameboid { //Unmoving cell / movement determined by surrounding environment, cosmetic
+class LoungerCell extends Ameboid { //Unmoving cell / movement determined by surrounding environment, cosmetic
 
 }
