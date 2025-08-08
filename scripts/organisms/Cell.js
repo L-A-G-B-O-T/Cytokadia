@@ -117,6 +117,8 @@ class SpitterCell extends Ameboid { //build up pressure and spit granules. Like 
 		//search around itself for bacteria
 		//upon finding bacteria, lock on to one of its body nodes (head probably)
 		//if AI.targetObj is not null
+		//if targetObj is close enough AND pressure is full
+			//launch granules at bacteria from nodes closest to bacteria
 		if (this.AI.targetObj != null){
 			if (this.AI.closeEnough && this.cytoplasm.idealArea >= this.AI.fullArea){
 				//recoil
@@ -146,9 +148,7 @@ class SpitterCell extends Ameboid { //build up pressure and spit granules. Like 
 				}
 			}
 		}
-			//if targetObj is close enough AND pressure is full
-				//launch granules at bacteria from nodes closest to bacteria
-			//else move toward targetObj
+			
 		
 		super.tick(t);
 	}
@@ -165,11 +165,11 @@ class SpitterCell extends Ameboid { //build up pressure and spit granules. Like 
 	}
 }
 
-class Alarm extends Ameboid { //have a higher aggro radius, and alerts + boosts other immune cells
+class Messenger extends Ameboid { //activates Factory cells and Alarm cells
 
 }
 
-class Messenger extends Ameboid { //activates Factory cells
+class Alarm extends Ameboid { //have a higher aggro radius, and alerts + boosts other immune cells
 
 }
 
