@@ -2,6 +2,7 @@
 
 var bacteria = [];
 var cells = [];
+var materials = [];
 var deltaTime = 30;
 var timeLast = new Date().getTime();
 var mouse = {
@@ -23,11 +24,20 @@ function mainloop(){
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 	for (const bacterium of bacteria) bacterium.tick(timeLast);
 	for (const cell of cells) cell.tick(timeLast);
+	for (const material of materials) material.tick(timeLast);
+	
+	{
+		let savedMaterial = [];
+		materials.forEach(m => {if (m.lifeLeft > 0) savedMaterial.push(m)});
+		materials = savedMaterial;
+	}
+
 
 	
     for (const bacterium of bacteria) bacterium.draw();
 	for (const cell of cells) cell.draw();
-	
+	for (const material of materials) material.draw(timeLast);
+
 	const timeCurrent = new Date().getTime();
 	ctx.fillStyle = "white";
 	ctx.fillText(`deltaTime: ${timeCurrent - timeLast}`,10,10);
@@ -45,6 +55,8 @@ function initialize(){
 	cells[0].AI.targetObj = mouse;
 	cells.push(new SpitterCell(new Vector(210,500)));
 	cells[1].AI.targetObj = mouse;
+
+	materials.push(new Granule(new Vector(100, 100)));
 	
 	setInterval(mainloop, deltaTime);
 }

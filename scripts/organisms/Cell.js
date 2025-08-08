@@ -119,7 +119,6 @@ class SpitterCell extends Ameboid { //build up pressure and spit granules. Like 
 		//if AI.targetObj is not null
 		if (this.AI.targetObj != null){
 			if (this.AI.closeEnough && this.cytoplasm.idealArea >= this.AI.fullArea){
-				//launch granules
 				//recoil
 				this.cytoplasm.idealArea /= 2;
 				//find node(s) closest to targetObj
@@ -132,11 +131,17 @@ class SpitterCell extends Ameboid { //build up pressure and spit granules. Like 
 					nodesForRecoil.push((closestNodeIndex + i) % this.cytoplasm.nC);
 				}
 				
+
 				for (let i = 0; i < this.cytoplasm.nC; i++){
 					const node = this.cytoplasm.nodes[i];
 					
 					const recoil = node.pos.sub(this.AI.targetObj.pos).normalizeSelf().mulScalarSelf(5);
-					if (nodesForRecoil.includes(i)) recoil.mulScalarSelf(2);
+					if (nodesForRecoil.includes(i)){
+						const granule = new Granule(node.pos);
+						granule.node.force.addSelf(recoil.mulScalar(-1));
+						materials.push(granule);
+						recoil.mulScalarSelf(2);
+					}
 					node.force.addSelf(recoil);
 				}
 			}

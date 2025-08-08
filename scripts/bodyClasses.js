@@ -216,7 +216,7 @@ class StrictSoftBody {//unfinished
 		this.idealArea = this.findArea();
 		this.pressureStiffness = 50;
 
-		const internodeLength = Math.sqrt(2*radius**2*(1 - Math.cos(2*Math.PI/nodeCount))) / squishFactor;
+		const internodeLength = Math.sqrt(2*radius**2*(1 - Math.cos(2*Math.PI/nodeCount))) * squishFactor;
 		for (let i = 0; i < nodeCount; i++){
 			const newEdge = new DistanceConstraint_Bi();
 			newEdge.A = this.nodes[(i)%nodeCount];
@@ -276,7 +276,7 @@ class StrictSoftBody {//unfinished
 	}
 	tick(t){
 		for (const edge of this.edges){
-			edge.calcForce();
+			edge.constrain();
 		}
 		
 		this.pressureForce();
