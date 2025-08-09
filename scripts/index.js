@@ -33,10 +33,10 @@ function mainloop(){
 	}
 
 
-	
-    for (const bacterium of bacteria) bacterium.draw();
-	for (const cell of cells) cell.draw();
-	for (const material of materials) material.draw(timeLast);
+	Camera.update();
+    for (const bacterium of bacteria) Camera.drawBacterium(bacterium);
+	for (const cell of cells) Camera.drawCell(cell);
+	for (const material of materials) Camera.drawMaterial(material);
 
 	const timeCurrent = new Date().getTime();
 	ctx.fillStyle = "white";
@@ -50,6 +50,7 @@ function initialize(){
 	console.log("init");
     bacteria.push(new Bacterium(10, 5, new Vector(200,200)));
 	bacteria[0].AI.isPlayer = true;
+	Camera.targetObj = bacteria[0].head;
 	
 	cells.push(new DevourerCell(new Vector(210,500)));
 	cells[0].AI.targetObj = mouse;

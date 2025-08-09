@@ -1,6 +1,14 @@
 "use strict";
 
-class Globular { //globular material
+class Material {
+    static lifespan = Number();
+    static fill = String();
+    static minRadius = Number();
+    static maxRadius = Number();
+    static id = NaN; //would be number
+}
+
+class Globular extends Material { //globular material
     static lifespan = Number();
     static fill = String();
     static minNodeCount = Number();
@@ -8,9 +16,11 @@ class Globular { //globular material
     static minRadius = Number();
     static maxRadius = Number();
     static squishFactor = Number();
+    static id = 0; //each "layer" of the heirarchy gets two bits for the id. Granule would be 0101 = 5 in base 10
 
     constructor(start){
         //represent self with a soft body
+        super();
         const nC = randint(this.constructor.minNodeCount, this.constructor.maxNodeCount);
         const radius = randint(this.constructor.minRadius, this.constructor.maxRadius);
         this.body = new StrictSoftBody(nC, radius, start, this.constructor.squishFactor);
@@ -41,14 +51,17 @@ class Globular { //globular material
 	}
 }
 
-class Rigid { //just nodes that spin
+class Rigid extends Material { //just nodes that spin
     static lifespan = Number();
     static fill = String();
     static minRadius = Number();
     static maxRadius = Number();
     static maxSides = Number();
     static minSides = Number();
+    static id = 1; //each "layer" of the heirarchy gets two bits for the id. Granule would be 0101 = 5 in base 10
+
     constructor(start){
+        super();
         this.node = new Node();
         this.node.pos.copy(start);
         this.node.posPrev.copy(start);
@@ -98,4 +111,5 @@ class Granule extends Rigid {
     static maxSides = Number(6);
     static minRadius = Number(10);
     static maxRadius = Number(15);
+    static id = 5; //each "layer" of the heirarchy gets two bits for the id. Granule would be 0101 = 5 in base 10
 }
