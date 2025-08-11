@@ -54,9 +54,9 @@ function initialize(){
 	Camera.targetObj = bacteria[0].head;
 	
 	cells.push(new DevourerCell(new Vector(210,500)));
-	cells[0].AI.targetObj = mouse;
+	cells[0].AI.targetObj = bacteria[0].head;
 	cells.push(new SpitterCell(new Vector(210,500)));
-	cells[1].AI.targetObj = mouse;
+	cells[1].AI.targetObj = bacteria[0].head;
 
 	materials.push(new Granule(new Vector(100, 100)));
 	

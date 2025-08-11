@@ -105,7 +105,7 @@ class SpitterCell extends Ameboid { //build up pressure and spit granules. Like 
 	constructor(start){
 		super(15, 100, start);
 		this.cytoplasmHue = 120;
-		this.AI.spitDist = 300;
+		this.AI.spitDist = 350;
 		this.AI.fullArea = this.cytoplasm.idealArea;
 		this.AI.closeEnough = false;
 		this.cytoplasm.idealArea /= 2;
