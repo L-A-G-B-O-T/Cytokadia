@@ -94,25 +94,25 @@ const Camera = {
 		ctx.translate(-this.pan.x, -this.pan.y);
 		{//circular body
 			ctx.fillStyle = material.constructor.fill;
-            ctx.globalAlpha = material.lifeLeft / material.constructor.lifespan
-			
+            ctx.globalAlpha = material.lifeLeft / material.constructor.lifespan;
+
 			let curve = [];
             const radVector = new Vector(material.radius, 0);
             radVector.rotateRadiansSelf(material.rotPos);
 
-			for (let i = 0; i < this.sides; i++){
+			for (let i = 0; i < material.sides; i++){
                 const vertex = radVector.add(material.node.pos);
                 curve.push(vertex.x, vertex.y);
                 radVector.rotateDegreesSelf(360 / material.sides);
             }
-			ctx.beginPath();
-			ctx.curve(curve, 0.0, 5, true);
-            
-            ctx.closePath();
-			ctx.fill();
 			
+			ctx.beginPath();
+			ctx.curve(curve, 0.0, 10, true);
+            
+			ctx.fill();
 		}
 		ctx.restore();
+		
     },
 	drawMaterial(material){
 		switch (material.constructor.id){
@@ -138,7 +138,7 @@ const Camera = {
 				} break;
 			case (5): //granule class
 				{
-
+					this.drawRigidMaterial(material);
 				} break;
 			default:
 				{

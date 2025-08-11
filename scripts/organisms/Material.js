@@ -53,7 +53,7 @@ class Globular extends Material { //globular material
 
 class Rigid extends Material { //just nodes that spin
     static lifespan = Number();
-    static fill = String();
+    static fill = String("#FFFFFF");
     static minRadius = Number();
     static maxRadius = Number();
     static maxSides = Number();

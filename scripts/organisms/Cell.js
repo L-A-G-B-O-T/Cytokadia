@@ -140,7 +140,7 @@ class SpitterCell extends Ameboid { //build up pressure and spit granules. Like 
 					const recoil = node.pos.sub(this.AI.targetObj.pos).normalizeSelf().mulScalarSelf(5);
 					if (nodesForRecoil.includes(i)){
 						const granule = new Granule(node.pos);
-						granule.node.force.addSelf(recoil.mulScalar(-1));
+						granule.node.force.subSelf(recoil);
 						materials.push(granule);
 						recoil.mulScalarSelf(2);
 					}
