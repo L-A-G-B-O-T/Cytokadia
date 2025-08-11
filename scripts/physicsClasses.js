@@ -36,7 +36,7 @@ class Node {
 		this.pos.copy(posNext);
 		//this.pos next = this.pos + (this.pos - this.posPrev + this.force/this.mass)
 
-		this.stayInBound(0, 0, canvas.width, canvas.height); //optional
+		//this.stayInBound(0, 0, canvas.width, canvas.height); //optional
 	}
 	stayInBound(minX, minY, maxX, maxY){
 		const posArr = this.pos.toArray();

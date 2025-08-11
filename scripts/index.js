@@ -7,11 +7,12 @@ var deltaTime = 30;
 var timeLast = new Date().getTime();
 var mouse = {
 	pos : new Vector(0, 0),
+	screenPos : new Vector(0, 0),
 	pressLeft : false, 
 };
 
 canvas.onmousemove = function(e){
-	mouse.pos.set(e.offsetX * canvasScaleFactor, e.offsetY * canvasScaleFactor);
+	mouse.screenPos.set(e.offsetX * canvasScaleFactor, e.offsetY * canvasScaleFactor);
 };
 canvas.onmousedown = function(e){
 	mouse.pressLeft = true;

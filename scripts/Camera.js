@@ -31,6 +31,7 @@ const Camera = {
                 } break;
         }
         this.zoom = (this.targetZoom + this.zoom) / 2;
+		mouse.pos.set(mouse.screenPos.x + this.pan.x, mouse.screenPos.y + this.pan.y);
     },
     drawBacterium(bacterium){
         console.assert(bacterium instanceof Bacterium);
