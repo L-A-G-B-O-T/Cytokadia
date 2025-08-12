@@ -104,6 +104,14 @@ class Rigid extends Material { //just nodes that spin
     }
 }
 
+class Fibrous extends Material {
+    static id = 2;
+}
+
+class Complex extends Material {
+    static id = 3;
+}
+
 class Granule extends Rigid {
     static lifespan = Number(100);
     static fill = String("#00FF00");
@@ -112,4 +120,22 @@ class Granule extends Rigid {
     static minRadius = Number(10);
     static maxRadius = Number(15);
     static id = 5; //each "layer" of the heirarchy gets two bits for the id. Granule would be 0101 = 5 in base 10
+}
+
+class Sugar extends Rigid {
+    static lifespan = Number(999);
+    static fill = String("#FFFFFF");
+    static minRadius = Number(1);
+    static maxRadius = Number(2);
+    static maxSides = Number(6);
+    static minSides = Number(5);
+    static id = 9; //each "layer" of the heirarchy gets two bits for the id. Sugar would be 1001 = 9 in base 10
+}
+
+class Complement extends Rigid { // have its own draw shape
+
+}
+
+class Antibody extends Complex { // have its own draw shape
+
 }
