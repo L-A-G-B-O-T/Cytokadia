@@ -108,7 +108,7 @@ const Camera = {
 		}
 		if (this.debug)
 			cell.cytoplasm.nodes.forEach(node => {
-				ctx.fillDot(node.pos, 2, "#FF0000");
+				ctx.fillDot(node.pos, node.mass, "#FF0000");
 			});
 		ctx.restore();
 	},

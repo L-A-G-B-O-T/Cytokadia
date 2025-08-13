@@ -118,6 +118,21 @@ class DistanceConstraint {
     }
 }
 
+function distCorrectionByMass(nodeA, nodeB, distance){
+	if (!(nodeA instanceof Node && nodeB instanceof Node)){
+		throw TypeError("A or B of <DistanceConstraint> object is not of type <Node>");
+	}
+	const disp = nodeB.pos.sub(nodeA.pos);
+	const dist = disp.length();
+	const correctionAmount = (distance - dist);
+	const A_correction_to_B_correction = nodeB.mass / nodeA.mass;
+	const A_correction = correctionAmount / (A_correction_to_B_correction + 1);
+	const B_correction = correctionAmount - A_correction;
+	disp.normalizeSelf();
+	nodeA.nextPosAcc.push(nodeA.pos.sub(disp.mulScalar(A_correction)));
+	nodeB.nextPosAcc.push(nodeB.pos.add(disp.mulScalar(B_correction)));
+}
+
 class DistanceConstraint_Bi {
 	constructor(){
 		this.A = this.B = null;
@@ -127,13 +142,16 @@ class DistanceConstraint_Bi {
 		if (!(this.A instanceof Node && this.B instanceof Node)){
             throw TypeError("A or B of <DistanceConstraint> object is not of type <Node>");
         }
-		const disp = this.B.pos.sub(this.A.pos);
+		distCorrectionByMass(this.A, this.B, this.distance);
+		/* const disp = this.B.pos.sub(this.A.pos);
 		const dist = disp.length();
 		const correctionAmount = (this.distance - dist) / 2;
+		const A_correction_to_B_correction = this.B.mass / this.A.mass;
+
 		
 		disp.normalizeSelf().mulScalarSelf(correctionAmount);
 		this.A.nextPosAcc.push(this.A.pos.sub(disp));
-		this.B.nextPosAcc.push(this.B.pos.add(disp));
+		this.B.nextPosAcc.push(this.B.pos.add(disp)); */
 	}
 }
 
