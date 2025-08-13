@@ -50,13 +50,13 @@ function mainloop(){
 
 function initialize(){
 	console.log("init");
-    bacteria.push(new Bacterium(10, 5, new Vector(200,200)));
+    bacteria.push(new Bacterium(10, 5, new Vector(0,0)));
 	bacteria[0].AI.isPlayer = true;
 	Camera.targetObj = bacteria[0].head;
 	
-	cells.push(new DevourerCell(new Vector(210,500)));
+	cells.push(new DevourerCell(new Vector(-500,0)));
 	cells[0].AI.targetObj = bacteria[0].head;
-	cells.push(new SpitterCell(new Vector(210,500)));
+	cells.push(new SpitterCell(new Vector(500,0)));
 	cells[1].AI.targetObj = bacteria[0].head;
 
 	materials.push(new Granule(new Vector(100, 100)));

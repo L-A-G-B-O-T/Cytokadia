@@ -9,7 +9,7 @@ class Bacterium { //
         
 
 		this.cytoplasm = new HardWormBody(cNC, 10, start, Math.PI / 6);
-        this.flagellum = new HardWormBody(nC - cNC, 10, this.cytoplasm.nodes[cNC-1].pos, Math.PI); //change to 3 if there are bugs
+        this.flagellum = new HardWormBody(nC - cNC, 10, this.cytoplasm.nodes[cNC-1].pos.addScalar(5), Math.PI); //change to 3 if there are bugs
         //join the flagellum to the cytoplasm; start with cytoplasm
 		this.body = new CompoundBody();
         this.body.offloadNodes(this.cytoplasm);
@@ -95,7 +95,7 @@ class Bacterium { //
 		this.head.force.addSelf(this.AI.targetDir.mulScalar(5).rotateRadiansSelf(Math.sin(t)));
 		this.body.tick(t);
 	}
-	draw(){
+	draw(){ //unused 
 		this.calcParametric();
         ctx.fillStyle = "#00FF00";
 		

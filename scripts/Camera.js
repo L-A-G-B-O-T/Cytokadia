@@ -7,6 +7,7 @@ const Camera = {
     targetPos : new Vector(0, 0),
 	targetObj : null,
     targetZoom : 1,
+	debug : true, 
     /*
     Various modes:
     S: SET, pan = target position
@@ -42,16 +43,19 @@ const Camera = {
 		bacterium.calcParametric();
 		ctx.save();
 		this.ctxTransform();
-        ctx.fillStyle = "#00FF00";
+        
 		
 		{//body
 			let curve = [];
 			bacterium.bodyPoints.forEach(point => {
 				curve.push(point.x, point.y);
+				if (this.debug)
+					ctx.fillDot(point, 2, "#0000FF")
 			});
 			
 			ctx.beginPath();
 			ctx.curve(curve, 0.5, 5, true);
+			ctx.fillStyle = "#00FF00";
 			ctx.fill();
 		}
 		
@@ -68,6 +72,17 @@ const Camera = {
 			ctx.curve(curve);
 			ctx.stroke();
 		}
+
+		if (this.debug) {//debug
+			ctx.strokeStyle = "#FF0000";
+			for (const node of bacterium.cytoplasm.nodes){
+				ctx.strokeCircle(node.pos, 10, 0, Math.PI*2);
+			}
+			for (const node of bacterium.flagellum.nodes){
+				ctx.fillDot(node.pos, 2, "#FF0000");
+			}
+		}
+
 		ctx.restore();
 	},
     drawCell(cell){
