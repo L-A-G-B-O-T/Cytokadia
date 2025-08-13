@@ -14,7 +14,7 @@ const Camera = {
     */
     update(){
 		if (this.targetObj != null){
-			this.targetPos.set(this.targetObj.pos.x - canvas.width / 2, this.targetObj.pos.y - canvas.height / 2)
+			this.targetPos.set(this.targetObj.pos.x, this.targetObj.pos.y)
 		}
         switch (this.mode){
 			case 'S':
@@ -31,13 +31,17 @@ const Camera = {
                 } break;
         }
         this.zoom = (this.targetZoom + this.zoom) / 2;
-		mouse.pos.set(mouse.screenPos.x + this.pan.x, mouse.screenPos.y + this.pan.y);
+		mouse.pos.set((mouse.screenPos.x - canvas.width/2)/this.zoom + this.pan.x, (mouse.screenPos.y - canvas.height/2)/this.zoom + this.pan.y);
+		this.drawMouse();
     },
+	ctxTransform(){
+		ctx.transform(this.zoom, 0, 0, this.zoom, -this.pan.x*this.zoom + canvas.width/2, -this.pan.y*this.zoom + canvas.height /2);
+	},
     drawBacterium(bacterium){
         console.assert(bacterium instanceof Bacterium);
 		bacterium.calcParametric();
 		ctx.save();
-		ctx.translate(-this.pan.x, -this.pan.y);
+		this.ctxTransform();
         ctx.fillStyle = "#00FF00";
 		
 		{//body
@@ -69,7 +73,7 @@ const Camera = {
     drawCell(cell){
 		console.assert(cell instanceof Cell);
 		ctx.save();
-		ctx.translate(-this.pan.x, -this.pan.y);
+		this.ctxTransform();
 		{//circular body
 			ctx.fillStyle = `hsla(${cell.cytoplasmHue}, 100%, 50%, 0.5)`;
 			ctx.strokeStyle = "white";
@@ -91,7 +95,7 @@ const Camera = {
 	},
     drawRigidMaterial(material){
         ctx.save();
-		ctx.translate(-this.pan.x, -this.pan.y);
+		this.ctxTransform();
 		{//circular body
 			ctx.fillStyle = material.constructor.fill;
             ctx.globalAlpha = material.lifeLeft / material.constructor.lifespan;
@@ -145,6 +149,31 @@ const Camera = {
 					throw RangeError("ID is not accounted for in Camera.drawMaterial(material)")
 				} break;
 		}
-	}
+	},
+	drawMesh(width){
+		ctx.save();
+		this.ctxTransform();
+		const beginX = Math.floor(this.pan.x / width)*width - canvas.width / 2;
+		const endX = this.pan.x + canvas.width / 2;
+		const beginY = Math.floor(this.pan.y / width)*width - canvas.height / 2;
+		const endY = this.pan.y + canvas.height / 2;
+		for (let i = beginX; i < endX; i += width){
+			ctx.beginPath();
+			ctx.curve([i, beginY, i, endY], 0.0, 1, false);
+			ctx.stroke();
+		}
+		for (let i = beginY; i < endY; i += width){
+			ctx.beginPath();
+			ctx.curve([beginX, i, endX, i], 0.0, 1, false);
+			ctx.stroke();
+		}
+		ctx.restore();
+	},
+	drawMouse(){
+		ctx.save();
+		this.ctxTransform();
+		ctx.strokeCircle(mouse.pos, 5, 0, Math.PI*2);
+		ctx.restore();
+	},
 
 }

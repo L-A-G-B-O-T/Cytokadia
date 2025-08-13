@@ -35,6 +35,7 @@ function mainloop(){
 
 
 	Camera.update();
+	Camera.drawMesh(50);
     for (const bacterium of bacteria) Camera.drawBacterium(bacterium);
 	for (const cell of cells) Camera.drawCell(cell);
 	for (const material of materials) Camera.drawMaterial(material);
