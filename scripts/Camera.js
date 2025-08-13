@@ -33,7 +33,7 @@ const Camera = {
         }
         this.zoom = (this.targetZoom + this.zoom) / 2;
 		mouse.pos.set((mouse.screenPos.x - canvas.width/2)/this.zoom + this.pan.x, (mouse.screenPos.y - canvas.height/2)/this.zoom + this.pan.y);
-		this.drawMouse();
+		if (this.debug) this.drawMouse();
     },
 	ctxTransform(){
 		ctx.transform(this.zoom, 0, 0, this.zoom, -this.pan.x*this.zoom + canvas.width/2, -this.pan.y*this.zoom + canvas.height /2);
@@ -106,6 +106,10 @@ const Camera = {
 			ctx.closePath();
 			ctx.stroke();
 		}
+		if (this.debug)
+			cell.cytoplasm.nodes.forEach(node => {
+				ctx.fillDot(node.pos, 2, "#FF0000");
+			});
 		ctx.restore();
 	},
     drawRigidMaterial(material){
@@ -130,6 +134,9 @@ const Camera = {
             
 			ctx.fill();
 		}
+		ctx.globalAlpha = 1;
+		if (this.debug)
+			ctx.fillDot(material.node.pos, 2, material.constructor.fill);
 		ctx.restore();
 		
     },
