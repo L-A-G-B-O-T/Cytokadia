@@ -10,6 +10,7 @@ class Cell { //soft body
 		this.body.referencedSoftBodies.push(this.cytoplasm);
 
 		this.cytoplasmHue = 60;
+		this.borderSaturation = 0;
 	}
 	tick(t){
 		this.body.tick(t);
@@ -18,7 +19,7 @@ class Cell { //soft body
 		ctx.save();
 		{//circular body
 			ctx.fillStyle = `hsla(${this.cytoplasmHue}, 100%, 50%, 0.5)`;
-			ctx.strokeStyle = "white";
+			ctx.strokeStyle = `hsla(${this.cytoplasmHue}, 100%, ${50 + this.borderSaturation*50}%, 1.0)`;
 			ctx.lineWidth = 10;
 			
 			let curve = [];
@@ -83,8 +84,9 @@ class Ameboid extends Cell{ //move via pseudopods
 
 class DevourerCell extends Ameboid { //reach over to you with pseudopods and pull you in, digesting you. 
 	constructor(start){
-		super(15, 180, start);
+		super(20, 200, start);
 		this.cytoplasmHue = 60;
+		this.borderSaturation = 0;
 	}
 	tick(t){
 		//search around itself for bacteria
@@ -103,8 +105,9 @@ class DevourerCell extends Ameboid { //reach over to you with pseudopods and pul
 
 class SpitterCell extends Ameboid { //build up pressure and spit granules. Like to quickly explode if you get too close, releasing nets. 
 	constructor(start){
-		super(15, 100, start);
+		super(15, 125, start);
 		this.cytoplasmHue = 120;
+		this.borderSaturation = 0;
 		this.AI.spitDist = 350;
 		this.AI.fullArea = this.cytoplasm.idealArea;
 		this.AI.closeEnough = false;
@@ -166,17 +169,33 @@ class SpitterCell extends Ameboid { //build up pressure and spit granules. Like 
 }
 
 class MessengerCell extends Ameboid { //activates Factory cells and Alarm cells
-
+	constructor(start){
+		super(20, 125, start);
+		this.cytoplasmHue = 120;
+		this.borderSaturation = 0;
+	}
 }
 
 class AlarmCell extends Ameboid { //have a higher aggro radius, and alerts + boosts other immune cells
-
+	constructor(start){
+		super(10, 75, start);
+		this.cytoplasmHue = 180;
+		this.borderSaturation = 0;
+	}
 }
 
 class FactoryCell extends Ameboid { //Produces bio weapons
-
+	constructor(start){
+		super(10, 90, start); //start off 90 radius, swell to 180 radius when activated
+		this.cytoplasmHue = 300;
+		this.borderSaturation = 0;
+	}
 }
 
-class LoungerCell extends Ameboid { //Unmoving cell / movement determined by surrounding environment, cosmetic
-
+class LoungerCell extends Cell { //Unmoving cell / movement determined by surrounding environment, cosmetic
+	constructor(nC, radius, start){
+		super(nC, radius, start);
+		this.cytoplasmHue = 0;
+		this.borderSaturation = 0.5;
+	}
 }

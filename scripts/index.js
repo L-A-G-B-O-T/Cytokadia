@@ -58,6 +58,9 @@ function initialize(){
 	cells[0].AI.targetObj = bacteria[0].head;
 	cells.push(new SpitterCell(new Vector(500,0)));
 	cells[1].AI.targetObj = bacteria[0].head;
+	cells.push(new LoungerCell(10, 75, new Vector(0, 0)));
+	cells.push(new AlarmCell(new Vector(0,500)));
+	cells.push(new MessengerCell(new Vector(0,-500)));
 
 	materials.push(new Granule(new Vector(100, 100)));
 	

@@ -91,7 +91,7 @@ const Camera = {
 		this.ctxTransform();
 		{//circular body
 			ctx.fillStyle = `hsla(${cell.cytoplasmHue}, 100%, 50%, 0.5)`;
-			ctx.strokeStyle = "white";
+			ctx.strokeStyle = `hsla(${cell.cytoplasmHue}, 100%, ${100 - cell.borderSaturation*50}%, 1.0)`;
 			ctx.lineWidth = 10;
 			
 			let curve = [];
