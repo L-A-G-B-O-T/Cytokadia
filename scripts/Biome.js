@@ -5,7 +5,17 @@ class Biome {
         this.spawnZone = null;
         this.exitZones = null;
 
-        this.cells = [];
+        this.cells = {
+            cells : [],
+            ameboid_cells : [],
+            anchored_cells : [],
+            devourers : [],
+            spitters : [],
+            messengers : [],
+            alarms : [],
+            factories : [],
+            loungers : [],
+        };
         this.bacteria = [];
         this.materials = {
             materials : [],
@@ -17,8 +27,11 @@ class Biome {
             sugars : [],
         };
     }
-    generate(callback){
+    generateGraph(callback){
         callback();
+    }
+    generateStructure(callback){
+        
     }
 }
 
@@ -28,7 +41,7 @@ class CapillaryBed_Biome extends Biome {
     constructor(){
         super();
     }
-    generate(callback){
+    generateGraph(callback){
         let graph = new GR_Graph();
         const enter = graph.addNode(new Vector(0, 300), 999);
         const middle = graph.addNode(new Vector(Math.random() * 100 + 425, Math.random() * 100 + 250), 0);
@@ -39,7 +52,7 @@ class CapillaryBed_Biome extends Biome {
         graph.minBound = new Vector(0, 0);
         graph.maxBound = new Vector(canvas.width, canvas.height);
 
-        graph.runRule = function(node){
+        graph.branchBed = function(node){
             if (graph.size() > graph.sizeCap) return true;
             if (node != enter && node != exit){
                 //replace node with a dimer or a tri-loop
@@ -112,12 +125,12 @@ class CapillaryBed_Biome extends Biome {
         }
         graph.nodeOrder = new GR_PriorityQueue();
         graph.nodes.forEach(node => {graph.nodeOrder.add(node)});
-        graph.iterate = function(){
+        graph.iterateBed = function(){
             let successful = true;
                 for (let i = 0; i < this.size(); i++){
                     const node = graph.nodeOrder.remove();
-                    successful = successful && graph.runRule(node);
-                    graph.nodeOrder.add(node)
+                    successful = successful && graph.branchBed(node);
+                    graph.nodeOrder.add(node);
                 }
                 return successful;
         }
@@ -147,11 +160,14 @@ class CapillaryBed_Biome extends Biome {
             }
         }
         for (let i = 0; i < 30; i++){
-            graph.iterate();
+            graph.iterateBed();
             graph.spaceOut();
         }
         for (let i = 0; i < 500; i++)
             graph.spaceOut();
-        super.generate(callback);
+        super.generateGraph(callback);
+    }
+    generateStructure(callback){
+
     }
 }
