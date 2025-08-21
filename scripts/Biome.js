@@ -2,11 +2,13 @@ class Biome {
     constructor(){
         this.name = "";
         this.id = Number();
+        this.generate = function(){}
     }
 }
 
-{//capillary bed generation 2.0
-    var graph = new GR_Graph();
+Biome.capillaryBed = new Biome(); //temporary biome
+Biome.capillaryBed.generate = function(callback){
+    let graph = new GR_Graph();
     const enter = graph.addNode(new Vector(0, 300), 999);
     const middle = graph.addNode(new Vector(Math.random() * 100 + 425, Math.random() * 100 + 250), 0);
     const exit = graph.addNode(new Vector(950, 300), 999);
@@ -123,4 +125,11 @@ class Biome {
             graph.spaceNode(node);
         }
     }
+    for (let i = 0; i < 30; i++){
+        graph.iterate();
+        graph.spaceOut();
+    }
+    for (let i = 0; i < 500; i++)
+        graph.spaceOut();
+    callback();
 }
