@@ -4,6 +4,18 @@ class Biome {
     constructor(){
         this.spawnZone = null;
         this.exitZones = null;
+
+        this.cells = [];
+        this.bacteria = [];
+        this.materials = {
+            materials : [],
+            globular_materials : [],
+            rigid_materials : [],
+            fibrous_materials : [],
+            complex_materials : [],
+            granules : [],
+            sugars : [],
+        };
     }
     generate(callback){
         callback();
@@ -15,7 +27,6 @@ class CapillaryBed_Biome extends Biome {
     static id = 0;
     constructor(){
         super();
-        this.spawnZone = null;
     }
     generate(callback){
         let graph = new GR_Graph();
