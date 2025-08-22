@@ -123,7 +123,7 @@ class CapillaryBed_Biome extends Biome {
             }
             return false;
         }
-        graph.nodeOrder = new GR_PriorityQueue();
+        graph.nodeOrder = new GR_PriorityQueue(function(a, b){ return a.value < b.value;});
         graph.nodes.forEach(node => {graph.nodeOrder.add(node)});
         graph.iterateBed = function(){
             let successful = true;
